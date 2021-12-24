@@ -21,10 +21,17 @@ Model for all DB:
 """
 
 import json, sqlite3
+from sqlalchemy import Column, Integer, String, Table
+from sqlalchemy.ext.declarative import declarative_base
 
 
-class ShellModel():
+Base = declarative_base()
+
+
+class ShellModel(Base):
+    """Default model of wing without longerone"""
     def __init__(self, **kwargs):
+        self.ID = kwargs['ID']
         self.model_name = kwargs['model_name']
         self.shell_angles = kwargs['shell_angles']
         self.value_vertical = kwargs['value_vertical']
@@ -38,40 +45,20 @@ class ShellModel():
         self.antiflatter_diam = kwargs['antiflatter_diam']
         self.antiflatter_lenght = kwargs['antiflatter_lenght']
     
+    __tablename__ = 'Shell'
+    
     def pull_all_values_in_db(self):
         pass
 
     def pull_current_value_in_db(self, value):
         pass
-    
-    def decode_json(self, query):
-        pass
 
 
 class LangeronModel(ShellModel):
+    """Default model of wing with longerone"""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.langeron_angles = kwargs['langeron_angles']
         self.langeron_wall_angles = kwargs['langeron_wall_angles']
         self.antiflatter_lenght = kwargs['wall_lenght']
         self.antiflatter_lenght = kwargs['wall_angle']
-
-
-def sql_execute(sql):
-    conn = sqlite3.connect('experiment.db')
-    cur = conn.cursor()
-    cur.execute(sql)
-    conn.commit()
-    cur.close()
-
-
-def create_table(model, table_name):
-    pass
-
-
-def write_the_values(table_name, element_id, **kwargs):
-    pass
-
-
-def read_the_values(table_name, element_id, **kwargs):
-    pass
