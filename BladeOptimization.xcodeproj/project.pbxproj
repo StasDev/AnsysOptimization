@@ -62,8 +62,8 @@
 		1F77077F27831F6300805FE2 /* BladeOptimization */ = {
 			isa = PBXGroup;
 			children = (
-				1F77078727831FF300805FE2 /* Parameters.hpp */,
-				1F7707882783204200805FE2 /* Libraries.hpp */,
+				1F77078E2783364D00805FE2 /* Files */,
+				1F77078D27832DA100805FE2 /* Include */,
 				1F77078C278320D700805FE2 /* Optimization */,
 				1F77078027831F6300805FE2 /* main.cpp */,
 			);
@@ -77,6 +77,22 @@
 				1F770789278320C600805FE2 /* Optimization.cpp */,
 			);
 			path = Optimization;
+			sourceTree = "<group>";
+		};
+		1F77078D27832DA100805FE2 /* Include */ = {
+			isa = PBXGroup;
+			children = (
+				1F77078727831FF300805FE2 /* Parameters.hpp */,
+				1F7707882783204200805FE2 /* Libraries.hpp */,
+			);
+			path = Include;
+			sourceTree = "<group>";
+		};
+		1F77078E2783364D00805FE2 /* Files */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Files;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

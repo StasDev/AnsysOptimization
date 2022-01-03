@@ -9,7 +9,7 @@
 #define Parameters_hpp
 
 constexpr unsigned NUMBER_OF_LAYERS = 2;
-constexpr unsigned BITS_PER_LAYER = 6;
+constexpr unsigned BITS_PER_LAYER = 7;
 constexpr float MIN_ANGLE = -89;
 constexpr float MAX_ANGLE = 90;
 constexpr float MIN_ACCEPTABLE_COST = 1.5;

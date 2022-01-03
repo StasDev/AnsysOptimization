@@ -38,8 +38,8 @@ public:
     unsigned GetNumberOfBits() const;
     float GetAngle(unsigned layer) const;
     void SetApproxAngle(float angle, unsigned layer);
-    void WriteAnglesInFileWithPath(const std::string &path = "/Users/stanislavdumanskij/Documents/GraphiteWork_small/Projects/HelicopterMianRotor/BladeOptimizationCpp/", const std::string &nameWithExtension =  "Angles.txt") const;
-    float ReadSafetyFactorFromFileWithPath(const std::string &path = "/Users/stanislavdumanskij/Documents/GraphiteWork_small/Projects/HelicopterMianRotor/BladeOptimizationCpp/", const std::string &nameWithExtension =  "Angles.txt");
+    void WriteAnglesInFileWithPath(const std::string &path = "/Users/mymac/Documents/Cpp/BladeOptimizationCpp/BladeOptimization/BladeOptimization/Files", const std::string &nameWithExtension =  "Angles.txt") const;
+    float ReadSafetyFactorFromFileWithPath(const std::string &path = "/Users/mymac/Documents/Cpp/BladeOptimizationCpp/BladeOptimization/BladeOptimization/Files", const std::string &nameWithExtension =  "Angles.txt");
     void SetCost(float c);
     
     friend std::ostream &operator<<(std::ostream &os, const ARRAY_ANGLES &arr);
