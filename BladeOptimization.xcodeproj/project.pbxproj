@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		1F77078127831F6300805FE2 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1F77078027831F6300805FE2 /* main.cpp */; };
+		1F77078B278320CE00805FE2 /* Optimization.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1F770789278320C600805FE2 /* Optimization.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -25,6 +26,10 @@
 /* Begin PBXFileReference section */
 		1F77077D27831F6300805FE2 /* BladeOptimization */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = BladeOptimization; sourceTree = BUILT_PRODUCTS_DIR; };
 		1F77078027831F6300805FE2 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		1F77078727831FF300805FE2 /* Parameters.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Parameters.hpp; sourceTree = "<group>"; };
+		1F7707882783204200805FE2 /* Libraries.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Libraries.hpp; sourceTree = "<group>"; };
+		1F770789278320C600805FE2 /* Optimization.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Optimization.cpp; sourceTree = "<group>"; };
+		1F77078A278320C600805FE2 /* Optimization.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Optimization.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,9 +62,21 @@
 		1F77077F27831F6300805FE2 /* BladeOptimization */ = {
 			isa = PBXGroup;
 			children = (
+				1F77078727831FF300805FE2 /* Parameters.hpp */,
+				1F7707882783204200805FE2 /* Libraries.hpp */,
+				1F77078C278320D700805FE2 /* Optimization */,
 				1F77078027831F6300805FE2 /* main.cpp */,
 			);
 			path = BladeOptimization;
+			sourceTree = "<group>";
+		};
+		1F77078C278320D700805FE2 /* Optimization */ = {
+			isa = PBXGroup;
+			children = (
+				1F77078A278320C600805FE2 /* Optimization.hpp */,
+				1F770789278320C600805FE2 /* Optimization.cpp */,
+			);
+			path = Optimization;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -119,6 +136,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1F77078B278320CE00805FE2 /* Optimization.cpp in Sources */,
 				1F77078127831F6300805FE2 /* main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
