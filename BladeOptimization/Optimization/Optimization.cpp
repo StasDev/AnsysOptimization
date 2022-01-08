@@ -12,14 +12,14 @@ int My_Random_Int_f::operator()() {
     return dist(re);
 }
 
-ARRAY_ANGLES::ARRAY_ANGLES(unsigned numberOfLayers, unsigned bitsPerLayer, float minAngle, float maxAngle): numberOfLayers{numberOfLayers}, bitsPerLayer{bitsPerLayer}, sizeInBits{numberOfLayers * bitsPerLayer}, minAngle{minAngle}, maxAngle{maxAngle},  stepAngles((maxAngle - minAngle) / (pow(2, bitsPerLayer) - 1)), data(sizeInBits) {
+DESIGN_VARIABLES::DESIGN_VARIABLES(unsigned numberSkinLayers, unsigned bitsPerLayer, float minAngle, float maxAngle): numberSkinLayers{numberSkinLayers}, bitsPerLayer{bitsPerLayer}, sizeInBits{numberSkinLayers * bitsPerLayer}, minAngle{minAngle}, maxAngle{maxAngle},  stepAngles((maxAngle - minAngle) / (pow(2, bitsPerLayer) - 1)), binaryEncoding(sizeInBits) {
     My_Random_Int_f RandNumber01(0, 1);
     for (int j = 0; j < sizeInBits; j++)
-        data[j] = RandNumber01();
+        binaryEncoding[j] = RandNumber01();
 }
-ARRAY_ANGLES::ARRAY_ANGLES(const ARRAY_ANGLES &arr): numberOfLayers{arr.numberOfLayers}, bitsPerLayer{arr.bitsPerLayer}, sizeInBits{arr.sizeInBits}, minAngle{arr.minAngle}, maxAngle{arr.maxAngle}, stepAngles{arr.stepAngles}, data(arr.data), cost{arr.cost} {}
-ARRAY_ANGLES &ARRAY_ANGLES::operator=(const ARRAY_ANGLES &arr) {
-    numberOfLayers = arr.numberOfLayers;
+DESIGN_VARIABLES::DESIGN_VARIABLES(const DESIGN_VARIABLES &arr): numberSkinLayers{arr.numberSkinLayers}, bitsPerLayer{arr.bitsPerLayer}, sizeInBits{arr.sizeInBits}, minAngle{arr.minAngle}, maxAngle{arr.maxAngle}, stepAngles{arr.stepAngles}, binaryEncoding(arr.binaryEncoding), cost{arr.cost} {}
+DESIGN_VARIABLES &DESIGN_VARIABLES::operator=(const DESIGN_VARIABLES &arr) {
+    numberSkinLayers = arr.numberSkinLayers;
     bitsPerLayer = arr.bitsPerLayer;
     sizeInBits = arr.sizeInBits;
     minAngle = arr.minAngle;
@@ -27,53 +27,53 @@ ARRAY_ANGLES &ARRAY_ANGLES::operator=(const ARRAY_ANGLES &arr) {
     stepAngles = arr.stepAngles;
     cost = arr.cost;
     for (int i = 0; i < sizeInBits; i++)
-        data[i] = arr.data[i];
+        binaryEncoding[i] = arr.binaryEncoding[i];
     return *this;
 }
-unsigned ARRAY_ANGLES::GetNumberOfBits() const {
+unsigned DESIGN_VARIABLES::GetNumberOfBits() const {
     return sizeInBits;
 }
-float ARRAY_ANGLES::GetAngle(unsigned layer) const {
-    assert(layer <= numberOfLayers);
+float DESIGN_VARIABLES::GetAngle(unsigned layer) const {
+    assert(layer <= numberSkinLayers);
     unsigned indexFirstBit = bitsPerLayer * (layer - 1);
     unsigned positionAngle = 0;
     for (unsigned j = indexFirstBit; j < indexFirstBit + bitsPerLayer; j++)
-        positionAngle += data[j] * pow(2, j - indexFirstBit);
+        positionAngle += binaryEncoding[j] * pow(2, j - indexFirstBit);
     return minAngle + stepAngles * positionAngle;
 }
-void ARRAY_ANGLES::SetApproxAngle(float angle, unsigned layer) {
+void DESIGN_VARIABLES::SetApproxAngle(float angle, unsigned layer) {
     unsigned positionAngle = (angle - minAngle) / stepAngles;
     unsigned indexFirstBit = bitsPerLayer * (layer - 1);
     unsigned oneBit = 1;
     for (int j = indexFirstBit; j < indexFirstBit + bitsPerLayer; j++) {
-        data[j] = positionAngle & oneBit;
+        binaryEncoding[j] = positionAngle & oneBit;
         positionAngle >>= 1; // equiv /= 2
     }
 }
-void ARRAY_ANGLES::WriteAnglesInFileWithPath(const std::string &path, const std::string &nameWithExtension) const {
+void DESIGN_VARIABLES::WriteAnglesInFileWithPath(const std::string &path, const std::string &nameWithExtension) const {
     std::ofstream out(path + nameWithExtension, std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
-    for (int layer = 1; layer <= numberOfLayers; layer++)
+    for (int layer = 1; layer <= numberSkinLayers; layer++)
         out << GetAngle(layer) << '\n';
     out.close();
 }
-float ARRAY_ANGLES::ReadSafetyFactorFromFileWithPath(const std::string &path, const std::string &nameWithExtension) {
+float DESIGN_VARIABLES::ReadSafetyFactorFromFileWithPath(const std::string &path, const std::string &nameWithExtension) {
     std::ifstream in(path + nameWithExtension);
     float cost = -1;
     while (in >> cost) {}
     return cost;
 }
-void ARRAY_ANGLES::SetCost(float c) {
+void DESIGN_VARIABLES::SetCost(float c) {
     cost = c;
 }
-std::ostream &operator<<(std::ostream &os, const ARRAY_ANGLES &arr) {
-    for (int layer = 1; layer <= arr.numberOfLayers; layer++ ) {
+std::ostream &operator<<(std::ostream &os, const DESIGN_VARIABLES &arr) {
+    for (int layer = 1; layer <= arr.numberSkinLayers; layer++ ) {
         os << "Layer " << layer << " has angle " << arr.GetAngle(layer) << '\n';
     }
     return os;
 }
 
-Cost_Angles_f::Cost_Angles_f(std::list<ARRAY_ANGLES> &calculatedSkins, float minAcceptableCost, float maxAcceptableCost): calculatedSkins{calculatedSkins}, minAcceptableCost{minAcceptableCost}, maxAcceptableCost{maxAcceptableCost} {}
-float Cost_Angles_f::CheckCost(const ARRAY_ANGLES &skin) const {
+Cost_Angles_f::Cost_Angles_f(std::list<DESIGN_VARIABLES> &calculatedSkins, float minAcceptableCost, float maxAcceptableCost): calculatedSkins{calculatedSkins}, minAcceptableCost{minAcceptableCost}, maxAcceptableCost{maxAcceptableCost} {}
+float Cost_Angles_f::CheckCost(const DESIGN_VARIABLES &skin) const {
     if(calculatedSkins.empty())
         return -1;
     bool isKeyAlreadyCalculated;
@@ -81,7 +81,7 @@ float Cost_Angles_f::CheckCost(const ARRAY_ANGLES &skin) const {
         isKeyAlreadyCalculated = true;
         assert(node->sizeInBits == skin.sizeInBits);
         for (int j = 0; j < skin.sizeInBits; j++) {
-            if (node->data[j] != skin.data[j]) {
+            if (node->binaryEncoding[j] != skin.binaryEncoding[j]) {
                 isKeyAlreadyCalculated = false;
                 break;
             }
@@ -98,14 +98,14 @@ void Cost_Angles_f::ImposePenalty(float &cost, double r1, double r2, double beta
 }
 
     //Simple cost functions for debugging
-float TestCF_SumSquares(int dimension, const ARRAY_ANGLES &x){
+float TestCF_SumSquares(int dimension, const DESIGN_VARIABLES &x){
     float cost = 0;
     for (int j = 1; j <= dimension; j++) {
         cost += pow(x.GetAngle(j), 2);
     }
     return cost;
 }
-float TestCF_Ackley(int dimension, const ARRAY_ANGLES &x){
+float TestCF_Ackley(int dimension, const DESIGN_VARIABLES &x){
     float cost = 0;
     float a = 20;
     float b = 0.2;
@@ -122,19 +122,19 @@ float TestCF_Ackley(int dimension, const ARRAY_ANGLES &x){
 }
 
 
-float Cost_Angles_f::operator()(ARRAY_ANGLES &skin) {
+float Cost_Angles_f::operator()(DESIGN_VARIABLES &skin) {
         //    Check was cost already calculated?
     float cost = CheckCost(skin);
     if (cost > 0)
         return cost;
-        //    *****************************
-        //    Test on simple cost functions:
-    cost = TestCF_SumSquares(skin.numberOfLayers, skin);
-        //    cost = TestCF_Ackley(skin.numberOfLayers, skin);
-        //    *****************************
+//    *****************************
+//    Test on simple cost functions:
+//    cost = TestCF_SumSquares(skin.numberSkinLayers, skin);
+//    cost = TestCF_Ackley(skin.numberSkinLayers, skin);
+//    *****************************
     skin.WriteAnglesInFileWithPath();
-    /*
-     //    Ansys calculates safetyFactor blade from data which was wrote in file Angles.txt
+/*
+     //    Ansys calculates safetyFactor blade from binaryEncoding which was wrote in file Angles.txt
      Py_Initialize();
      FILE* fp = fopen("/Users/stanislavdumanskij/Documents/GraphiteWork_small/Projects/HelicopterMianRotor/BladeOptimizationCpp/BladeOptimizationCpp/PythonFiles/test_script.py", "r");
      PyRun_AnyFile(fp, "/Users/stanislavdumanskij/Documents/GraphiteWork_small/Projects/HelicopterMianRotor/BladeOptimizationCpp/BladeOptimizationCpp/PythonFiles/test_script.py");
@@ -142,7 +142,7 @@ float Cost_Angles_f::operator()(ARRAY_ANGLES &skin) {
      
      cost = skin.ReadSafetyFactorFromFileWithPath();
      ImposePenalty(cost);
-     */
+*/
     skin.SetCost(cost);
     calculatedSkins.push_back(skin);
     return cost;
@@ -189,28 +189,28 @@ std::vector<unsigned> SIMPLE_GA::Selection() const {
     return std::vector<unsigned>{indexParent1, indexParent2};
 }
 void SIMPLE_GA::Crossover(unsigned indexParent1, unsigned indexParent2) {
-    ARRAY_ANGLES children1{population[indexParent1]};
-    ARRAY_ANGLES children2{population[indexParent2]};
+    DESIGN_VARIABLES children1{population[indexParent1]};
+    DESIGN_VARIABLES children2{population[indexParent2]};
     My_Random_Int_f RandomNumber(1, children1.GetNumberOfBits() - 1);
     unsigned crossoverPoint = RandomNumber();
     for (unsigned j = crossoverPoint; j < children1.GetNumberOfBits(); j++) {
-        children1.data[j] = population[indexParent2].data[j];
-        children2.data[j] = population[indexParent1].data[j];
+        children1.binaryEncoding[j] = population[indexParent2].binaryEncoding[j];
+        children2.binaryEncoding[j] = population[indexParent1].binaryEncoding[j];
     }
     children.push_back(children1);
     children.push_back(children2);
 }
 void SIMPLE_GA::Mutation() {
     My_Random_Int_f RandomNumber1_100(1, 100);
-    for (ARRAY_ANGLES &ind : children) {
+    for (DESIGN_VARIABLES &ind : children) {
         for (unsigned j = 0; j < ind.GetNumberOfBits(); j++) {
             if (RandomNumber1_100() <= 100 * mutationRate)
-                ind.data[j] = (ind.data[j] == true ? false : true);
+                ind.binaryEncoding[j] = (ind.binaryEncoding[j] == true ? false : true);
         }
     }
 }
 
-ARRAY_ANGLES SIMPLE_GA::Optimization() {
+DESIGN_VARIABLES SIMPLE_GA::Optimization() {
     unsigned generation = 1;
     for (auto &ind : population)
         Cost(ind);

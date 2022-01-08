@@ -8,10 +8,12 @@
 #ifndef Parameters_hpp
 #define Parameters_hpp
 
-constexpr unsigned NUMBER_OF_LAYERS = 2;
-constexpr unsigned BITS_PER_LAYER = 7;
+constexpr unsigned NUMBER_SKIN_LAYERS = 2;
+constexpr unsigned NUMBER_SPAR_LAYERS = 2;
+constexpr unsigned BITS_PER_LAYER = 6;
 constexpr float MIN_ANGLE = -89;
 constexpr float MAX_ANGLE = 90;
+
 constexpr float MIN_ACCEPTABLE_COST = 1.5;
 constexpr float MAX_ACCEPTABLE_COST = 2;
 constexpr unsigned SIZE_POPULATION = 20;
