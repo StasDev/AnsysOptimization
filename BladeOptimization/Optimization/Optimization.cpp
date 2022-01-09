@@ -46,65 +46,212 @@ std::vector<int> DESIGN_VARIABLES::arrTMR(pow(2, BITS_PER_TM_R));
 std::vector<int> DESIGN_VARIABLES::arrTML(pow(2, BITS_PER_TM_L));
 std::vector<float> DESIGN_VARIABLES::arrTMX(pow(2, BITS_PER_TM_X));
 std::vector<float> DESIGN_VARIABLES::arrTMY(pow(2, BITS_PER_TM_Y));
-std::vector<int> DESIGN_VARIABLES::arrSparBackWallAngles(pow(2, BITS_PER_SPAR_WALL_ANGLE));
-std::vector<int> DESIGN_VARIABLES::arrSparBackWallPositions(pow(2, BITS_PER_SPAR_WALL_POSITION));
+std::vector<int> DESIGN_VARIABLES::arrSparWallAngles(pow(2, BITS_PER_SPAR_WALL_ANGLE));
+std::vector<int> DESIGN_VARIABLES::arrSparWallPositions(pow(2, BITS_PER_SPAR_WALL_POSITION));
 
-DESIGN_VARIABLES::DESIGN_VARIABLES(unsigned skinNumberOfLayrers, unsigned sparNumberOfLayrers): doesBladeHasSpar(sparNumberOfLayrers), skinNumberOfLayrers{skinNumberOfLayrers}, sparNumberOfLayrers{sparNumberOfLayrers}, sizeInBits{skinBitsPerLayer * skinNumberOfLayrers + sparBitsPerLayer * sparNumberOfLayrers + }, binaryEncoding(sizeInBits) {
-    My_Random_Int_f RandNumber01(0, 1);
-    for (int j = 0; j < sizeInBits; j++)
-        binaryEncoding[j] = RandNumber01();
-}
-DESIGN_VARIABLES::DESIGN_VARIABLES(const DESIGN_VARIABLES &arr): numberSkinLayers{arr.numberSkinLayers}, bitsPerLayer{arr.bitsPerLayer}, sizeInBits{arr.sizeInBits}, minAngle{arr.minAngle}, maxAngle{arr.maxAngle}, stepAngles{arr.stepAngles}, binaryEncoding(arr.binaryEncoding), cost{arr.cost} {}
-DESIGN_VARIABLES &DESIGN_VARIABLES::operator=(const DESIGN_VARIABLES &arr) {
-    numberSkinLayers = arr.numberSkinLayers;
-    bitsPerLayer = arr.bitsPerLayer;
-    sizeInBits = arr.sizeInBits;
-    minAngle = arr.minAngle;
-    maxAngle = arr.maxAngle;
-    stepAngles = arr.stepAngles;
-    cost = arr.cost;
-    for (int i = 0; i < sizeInBits; i++)
-        binaryEncoding[i] = arr.binaryEncoding[i];
-    return *this;
-}
-unsigned DESIGN_VARIABLES::GetNumberOfBits() const {
-    return sizeInBits;
-}
-float DESIGN_VARIABLES::GetAngle(unsigned layer) const {
-    assert(layer <= numberSkinLayers);
-    unsigned indexFirstBit = bitsPerLayer * (layer - 1);
-    unsigned positionAngle = 0;
-    for (unsigned j = indexFirstBit; j < indexFirstBit + bitsPerLayer; j++)
-        positionAngle += binaryEncoding[j] * pow(2, j - indexFirstBit);
-    return minAngle + stepAngles * positionAngle;
-}
-void DESIGN_VARIABLES::SetApproxAngle(float angle, unsigned layer) {
-    unsigned positionAngle = (angle - minAngle) / stepAngles;
-    unsigned indexFirstBit = bitsPerLayer * (layer - 1);
-    unsigned oneBit = 1;
-    for (int j = indexFirstBit; j < indexFirstBit + bitsPerLayer; j++) {
-        binaryEncoding[j] = positionAngle & oneBit;
-        positionAngle >>= 1; // equiv /= 2
+void DESIGN_VARIABLES::FillAllDirectAdressingTables(bool hasSpar) {
+    FillDirectAdressingTable(arrSkinSparAngles, skinBitsPerLayer, skinMinAngle, skinMaxAngle);
+    FillDirectAdressingTable(arrTMR, tmBitsPerR, tmMinR, tmMaxR);
+    FillDirectAdressingTable(arrTML, tmBitsPerL, tmMinL, tmMaxL);
+    FillDirectAdressingTable(arrTMX, tmBitsPerX, tmMinX, tmMaxX);
+    FillDirectAdressingTable(arrTMY, tmBitsPerY, tmMinY, tmMaxY);
+    if (hasSpar) {
+        FillDirectAdressingTable(arrSparWallAngles, sparBitsPerWallAngle, sparMinWallAngle, sparMaxWallAngle);
+        FillDirectAdressingTable(arrSparWallPositions, sparBitsPerWallPosition, sparMinWallPosition, sparMaxWallPosition);
     }
 }
-void DESIGN_VARIABLES::WriteAnglesInFileWithPath(const std::string &path, const std::string &nameWithExtension) const {
-    std::ofstream out(path + nameWithExtension, std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
-    for (int layer = 1; layer <= numberSkinLayers; layer++)
-        out << GetAngle(layer) << '\n';
-    out.close();
+
+DESIGN_VARIABLES::DESIGN_VARIABLES(unsigned skinNumberOfLayers, unsigned sparNumberOfLayers): doesBladeHasSpar(sparNumberOfLayers), skinNumberOfLayers{skinNumberOfLayers}, sparNumberOfLayers{sparNumberOfLayers}, sizeInBits{skinBitsPerLayer * skinNumberOfLayers + tmBitsPerR + tmBitsPerL + tmBitsPerX + tmBitsPerY}, binaryEncoding(sizeInBits) {
+    My_Random_Int_f RandNumber01(0, 1);
+    if (doesBladeHasSpar)
+        sizeInBits += sparNumberOfLayers * sparBitsPerLayer + sparBitsPerWallAngle + sparBitsPerWallPosition;
+    for (int j = 0; j < sizeInBits; j++)
+        binaryEncoding[j] = RandNumber01();
+    FillAllDirectAdressingTables(doesBladeHasSpar);
 }
-float DESIGN_VARIABLES::ReadSafetyFactorFromFileWithPath(const std::string &path, const std::string &nameWithExtension) {
-    std::ifstream in(path + nameWithExtension);
-    float cost = -1;
-    while (in >> cost) {}
-    return cost;
+DESIGN_VARIABLES::DESIGN_VARIABLES(const DESIGN_VARIABLES &x): doesBladeHasSpar{x.doesBladeHasSpar}, skinNumberOfLayers{x.skinNumberOfLayers}, sparNumberOfLayers{x.sparNumberOfLayers}, sizeInBits{x.sizeInBits}, binaryEncoding(x.binaryEncoding), cost{x.cost} {}
+DESIGN_VARIABLES &DESIGN_VARIABLES::operator=(const DESIGN_VARIABLES &x) {
+    doesBladeHasSpar = x.doesBladeHasSpar;
+    skinNumberOfLayers = x.skinNumberOfLayers;
+    sparNumberOfLayers = x.sparNumberOfLayers;
+    sizeInBits = x.sizeInBits;
+    binaryEncoding = x.binaryEncoding;
+    cost = x.cost;
+    for (int i = 0; i < sizeInBits; i++)
+        binaryEncoding[i] = x.binaryEncoding[i];
+    return *this;
 }
+unsigned DESIGN_VARIABLES::GetSizeInBits() const {
+    return sizeInBits;
+}
+
+void DESIGN_VARIABLES::SetApproxSkinAngle(unsigned layer, int angle) {
+    assert((layer <= skinNumberOfLayers) && (skinMinAngle <= angle) && (angle <= skinMaxAngle));
+    float stepByAngle = (skinMaxAngle - skinMinAngle) / (pow(2,skinBitsPerLayer) - 1);
+    unsigned keyAngle = (angle - skinMinAngle) / stepByAngle; // approximation
+    unsigned indexFirstBit = skinBitsPerLayer * (layer - 1);
+    unsigned oneBit = 1;
+    for (int j = indexFirstBit; j < indexFirstBit + skinBitsPerLayer; j++) {
+        binaryEncoding[j] = keyAngle & oneBit;
+        keyAngle >>= 1; // equiv /= 2
+    }
+}
+int DESIGN_VARIABLES::GetSkinAngle(unsigned layer) const {
+    assert(layer <= skinNumberOfLayers);
+    unsigned indexFirstBit = skinBitsPerLayer * (layer - 1);
+    unsigned keyAngle = 0;
+    for (unsigned j = indexFirstBit; j < indexFirstBit + skinBitsPerLayer; j++)
+        keyAngle += binaryEncoding[j] * pow(2, j - indexFirstBit);
+    return arrSkinSparAngles[keyAngle];
+}
+
+void DESIGN_VARIABLES::SetTMR(int r) {
+    assert(r > 0);
+    float stepR = (tmMaxR - tmMinR) / (pow(2,tmBitsPerR) - 1);
+    unsigned keyR = (r - tmMinR) / stepR; // approximation
+    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer;
+    unsigned oneBit = 1;
+    for (int j = indexFirstBit; j < indexFirstBit + tmBitsPerR; j++) {
+        binaryEncoding[j] = keyR & oneBit;
+        keyR >>= 1; // equiv /= 2
+    }
+}
+int DESIGN_VARIABLES::GetTMR() const {
+    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer;
+    unsigned keyR = 0;
+    for (unsigned j = indexFirstBit; j < indexFirstBit + tmBitsPerR; j++)
+        keyR += binaryEncoding[j] * pow(2, j - indexFirstBit);
+    return arrTMR[keyR];
+}
+
+void DESIGN_VARIABLES::SetTML(int L) {
+    assert(L > 0);
+    float stepL = (tmMaxL - tmMinL) / (pow(2,tmBitsPerL) - 1);
+    unsigned keyL = (L - tmMinL) / stepL; // approximation
+    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerR;
+    unsigned oneBit = 1;
+    for (int j = indexFirstBit; j < indexFirstBit + tmBitsPerL; j++) {
+        binaryEncoding[j] = keyL & oneBit;
+        keyL >>= 1; // equiv /= 2
+    }
+}
+int DESIGN_VARIABLES::GetTML() const {
+    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerR;
+    unsigned keyL = 0;
+    for (unsigned j = indexFirstBit; j < indexFirstBit + tmBitsPerL; j++)
+        keyL += binaryEncoding[j] * pow(2, j - indexFirstBit);
+    return arrTML[keyL];
+}
+
+void DESIGN_VARIABLES::SetTMX(float x) {
+    float stepX = (tmMaxX - tmMinX) / (pow(2,tmBitsPerX) - 1);
+    unsigned keyX = (x - tmMinX) / stepX; // approximation
+    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerR + tmBitsPerL;
+    unsigned oneBit = 1;
+    for (int j = indexFirstBit; j < indexFirstBit + tmBitsPerX; j++) {
+        binaryEncoding[j] = keyX & oneBit;
+        keyX >>= 1; // equiv /= 2
+    }
+}
+float DESIGN_VARIABLES::GetTMX() const {
+    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerR + tmBitsPerL;
+    unsigned keyX = 0;
+    for (unsigned j = indexFirstBit; j < indexFirstBit + tmBitsPerX; j++)
+        keyX += binaryEncoding[j] * pow(2, j - indexFirstBit);
+    return arrTMX[keyX];
+}
+
+void DESIGN_VARIABLES::SetTMY(float y) {
+    float stepY = (tmMaxY - tmMinY) / (pow(2,tmBitsPerY) - 1);
+    unsigned keyY = (y - tmMinY) / stepY; // approximation
+    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerR + tmBitsPerL + tmBitsPerX;
+    unsigned oneBit = 1;
+    for (int j = indexFirstBit; j < indexFirstBit + tmBitsPerY; j++) {
+        binaryEncoding[j] = keyY & oneBit;
+        keyY >>= 1; // equiv /= 2
+    }
+}
+float DESIGN_VARIABLES::GetTMY() const {
+    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerR + tmBitsPerL + tmBitsPerX;
+    unsigned keyY = 0;
+    for (unsigned j = indexFirstBit; j < indexFirstBit + tmBitsPerY; j++)
+        keyY += binaryEncoding[j] * pow(2, j - indexFirstBit);
+    return arrTMY[keyY];
+}
+
+void DESIGN_VARIABLES::SetApproxSparAngle(unsigned layer, int angle) {
+    assert(doesBladeHasSpar && (layer <= sparNumberOfLayers) && (sparMinAngle <= angle) && (angle <= sparMaxAngle));
+    float stepByAngle = (sparMaxAngle - sparMinAngle) / (pow(2,sparBitsPerLayer) - 1);
+    unsigned keyAngle = (angle - sparMinAngle) / stepByAngle; // approximation
+    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerR + tmBitsPerL + tmBitsPerX + tmBitsPerY + sparBitsPerLayer * (layer - 1);
+    unsigned oneBit = 1;
+    for (int j = indexFirstBit; j < indexFirstBit + sparBitsPerLayer; j++) {
+        binaryEncoding[j] = keyAngle & oneBit;
+        keyAngle >>= 1; // equiv /= 2
+    }
+}
+int DESIGN_VARIABLES::GetSparAngle(unsigned layer) const {
+    assert(doesBladeHasSpar && layer <= sparNumberOfLayers);
+    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerR + tmBitsPerL + tmBitsPerX + tmBitsPerY + sparBitsPerLayer * (layer - 1);
+    unsigned keyAngle = 0;
+    for (unsigned j = indexFirstBit; j < indexFirstBit + sparBitsPerLayer; j++)
+        keyAngle += binaryEncoding[j] * pow(2, j - indexFirstBit);
+    return arrSkinSparAngles[keyAngle];
+}
+
+void DESIGN_VARIABLES::SetSparWallAngle(int wallAngle) {
+    assert(doesBladeHasSpar);
+    float stepWA = (sparMaxWallAngle - sparMinWallAngle) / (pow(2,sparBitsPerWallAngle) - 1);
+    unsigned keyWA = (wallAngle - sparMinWallAngle) / stepWA; // approximation
+    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerR + tmBitsPerL + tmBitsPerX + tmBitsPerY + sparNumberOfLayers * sparBitsPerLayer;
+    unsigned oneBit = 1;
+    for (int j = indexFirstBit; j < indexFirstBit + sparBitsPerWallAngle; j++) {
+        binaryEncoding[j] = keyWA & oneBit;
+        keyWA >>= 1; // equiv /= 2
+    }
+}
+int DESIGN_VARIABLES::GetSparWallAngle() const{
+    assert(doesBladeHasSpar);
+    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerR + tmBitsPerL + tmBitsPerX + tmBitsPerY + sparNumberOfLayers * sparBitsPerLayer;
+    unsigned keyWA = 0;
+    for (unsigned j = indexFirstBit; j < indexFirstBit + sparBitsPerWallAngle; j++)
+        keyWA += binaryEncoding[j] * pow(2, j - indexFirstBit);
+    return arrSparWallAngles[keyWA];
+}
+
+void DESIGN_VARIABLES::SetSparWallPosition(int xD) {
+    assert(doesBladeHasSpar);
+    float stepWP = (sparMaxWallPosition - sparMinWallPosition) / (pow(2,sparBitsPerWallPosition) - 1);
+    unsigned keyWP = (xD - sparMinWallPosition) / stepWP; // approximation
+    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerR + tmBitsPerL + tmBitsPerX + tmBitsPerY + sparNumberOfLayers * sparBitsPerLayer + sparBitsPerWallAngle;
+    unsigned oneBit = 1;
+    for (int j = indexFirstBit; j < indexFirstBit + sparBitsPerWallPosition; j++) {
+        binaryEncoding[j] = keyWP & oneBit;
+        keyWP >>= 1; // equiv /= 2
+    }
+}
+int DESIGN_VARIABLES::GetSparWallPosition() const{
+    assert(doesBladeHasSpar);
+    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerR + tmBitsPerL + tmBitsPerX + tmBitsPerY + sparNumberOfLayers * sparBitsPerLayer + sparBitsPerWallAngle;
+    unsigned keyWP = 0;
+    for (unsigned j = indexFirstBit; j < indexFirstBit + sparBitsPerWallPosition; j++)
+        keyWP += binaryEncoding[j] * pow(2, j - indexFirstBit);
+    return arrSparWallAngles[keyWP];
+}
+
+
+
+
+
+
 void DESIGN_VARIABLES::SetCost(float c) {
     cost = c;
 }
-std::ostream &operator<<(std::ostream &os, const DESIGN_VARIABLES &arr) {
-    for (int layer = 1; layer <= arr.numberSkinLayers; layer++ ) {
+
+std::ostream &operator<<(std::ostream &os, const DESIGN_VARIABLES &x) {
+    for (int layer = 1; layer <= x.skinNumberOfLayers; layer++ ) {
         os << "Layer " << layer << " has angle " << arr.GetAngle(layer) << '\n';
+//        ...
     }
     return os;
 }

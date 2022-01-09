@@ -18,6 +18,7 @@
 #include <chrono>
 
 //#include </Library/Frameworks/Python.framework/Versions/3.10/include/python3.10/Python.h>
-//#include <cassert>
+//#define NDEBUG // uncomment from off all assert checks in release version
+#include <cassert>
 
 #endif /* Libraries_hpp */

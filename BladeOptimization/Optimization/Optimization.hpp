@@ -23,7 +23,7 @@ public:
 class DESIGN_VARIABLES {
     bool doesBladeHasSpar;
 //    Skin
-    unsigned skinNumberOfLayrers;
+    unsigned skinNumberOfLayers;
     static unsigned skinBitsPerLayer;
     static int skinMinAngle;
     static int skinMaxAngle;
@@ -40,8 +40,8 @@ class DESIGN_VARIABLES {
     static unsigned tmBitsPerY;
     static float tmMinY;
     static float tmMaxY;
-//    D-spar
-    unsigned sparNumberOfLayrers;
+//    Spar
+    unsigned sparNumberOfLayers;
     static unsigned sparBitsPerLayer;
     static int sparMinAngle;
     static int sparMaxAngle;
@@ -51,6 +51,11 @@ class DESIGN_VARIABLES {
     static unsigned sparBitsPerWallAngle;
     static int sparMinWallAngle;
     static int sparMaxWallAngle;
+//    Binary representation of individ
+    unsigned sizeInBits;
+    std::vector<bool> binaryEncoding;
+    
+    float cost = std::numeric_limits<double>::infinity();
     
 //    For decoding of binary representation is used direct addressing scheme;
     static std::vector<int> arrSkinSparAngles;
@@ -58,8 +63,8 @@ class DESIGN_VARIABLES {
     static std::vector<int> arrTML;
     static std::vector<float> arrTMX;
     static std::vector<float> arrTMY;
-    static std::vector<int> arrSparBackWallAngles;
-    static std::vector<int> arrSparBackWallPositions;
+    static std::vector<int> arrSparWallAngles;
+    static std::vector<int> arrSparWallPositions;
     
     template <typename T>
     static void FillDirectAdressingTable(std::vector<T> &arr, unsigned numberOfBits, T minValue, T maxValue) {
@@ -67,23 +72,44 @@ class DESIGN_VARIABLES {
         for (int k = 0; k < pow(2, numberOfBits); k++)
             arr[k] = minValue + k * step;
     }
+    static void FillAllDirectAdressingTables(bool hasSpar);
     
-    unsigned sizeInBits;
-    std::vector<bool> binaryEncoding; // binary representation indexes angles in array [minAngle, minAngle + stepAngles, ..., maxAngle - stepAngles, maxAngle]
-    float cost = std::numeric_limits<double>::infinity();
 public:
-    DESIGN_VARIABLES(unsigned skinNumberOfLayrers = NUMBER_SKIN_LAYERS, unsigned sparNumberOfLayrers = NUMBER_SPAR_LAYERS);
+    DESIGN_VARIABLES(unsigned skinNumberOfLayers = NUMBER_SKIN_LAYERS, unsigned sparNumberOfLayers = NUMBER_SPAR_LAYERS);
     DESIGN_VARIABLES(const DESIGN_VARIABLES &arr);
     DESIGN_VARIABLES &operator=(const DESIGN_VARIABLES &arr);
+    unsigned GetSizeInBits() const;
     
-    unsigned GetNumberOfBits() const;
-    float GetAngle(unsigned layer) const;
+    void SetApproxSkinAngle(unsigned layer, int angle);
+    int GetSkinAngle(unsigned layer) const;
+    
+    void SetTMR(int r);
+    int GetTMR() const;
+    
+    void SetTML(int L);
+    int GetTML() const;
+    
+    void SetTMX(float x);
+    float GetTMX() const;
+    
+    void SetTMY(float y);
+    float GetTMY() const;
+    
+    void SetApproxSparAngle(unsigned layer, int angle);
+    int GetSparAngle(unsigned layer) const;
+    
+    void SetSparWallAngle(int angle);
+    int GetSparWallAngle() const;
+    
+    void SetSparWallPosition(int xD);
+    int GetSparWallPosition() const;
+    
     void SetApproxAngle(float angle, unsigned layer);
     void WriteAnglesInFileWithPath(const std::string &path = "/Users/mymac/Documents/Cpp/BladeOptimizationCpp/BladeOptimization/BladeOptimization/Files", const std::string &nameWithExtension =  "Angles.txt") const;
     float ReadSafetyFactorFromFileWithPath(const std::string &path = "/Users/mymac/Documents/Cpp/BladeOptimizationCpp/BladeOptimization/BladeOptimization/Files", const std::string &nameWithExtension =  "Angles.txt");
     void SetCost(float c);
     
-    friend std::ostream &operator<<(std::ostream &os, const DESIGN_VARIABLES &arr);
+    friend std::ostream &operator<<(std::ostream &os, const DESIGN_VARIABLES &x);
     friend class Cost_Angles_f;
     friend class SIMPLE_GA;
 };
