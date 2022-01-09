@@ -19,24 +19,60 @@ public:
     int operator()();
 };
 
+//Blade consist of skin, tuning mass (tm), foam, and optionally D-spar (spar)
 class DESIGN_VARIABLES {
-    bool bladeWithSpar = false;
+    bool doesBladeHasSpar;
+//    Skin
+    unsigned skinNumberOfLayrers;
+    static unsigned skinBitsPerLayer;
+    static int skinMinAngle;
+    static int skinMaxAngle;
+//    Tuning mass
+    static unsigned tmBitsPerR;
+    static int tmMinR;
+    static int tmMaxR;
+    static unsigned tmBitsPerL;
+    static int tmMinL;
+    static int tmMaxL;
+    static unsigned tmBitsPerX;
+    static float tmMinX;
+    static float tmMaxX;
+    static unsigned tmBitsPerY;
+    static float tmMinY;
+    static float tmMaxY;
+//    D-spar
+    unsigned sparNumberOfLayrers;
+    static unsigned sparBitsPerLayer;
+    static int sparMinAngle;
+    static int sparMaxAngle;
+    static unsigned sparBitsPerWallPosition;
+    static int sparMinWallPosition;
+    static int sparMaxWallPosition;
+    static unsigned sparBitsPerWallAngle;
+    static int sparMinWallAngle;
+    static int sparMaxWallAngle;
     
-    unsigned numberSkinLayers;
-    unsigned numberSparLayers;
+//    For decoding of binary representation is used direct addressing scheme;
+    static std::vector<int> arrSkinSparAngles;
+    static std::vector<int> arrTMR;
+    static std::vector<int> arrTML;
+    static std::vector<float> arrTMX;
+    static std::vector<float> arrTMY;
+    static std::vector<int> arrSparBackWallAngles;
+    static std::vector<int> arrSparBackWallPositions;
     
-    unsigned bitsPerLayer;
-    int minAngle;
-    int maxAngle;
-//    float stepAngles;
-    
-    
+    template <typename T>
+    static void FillDirectAdressingTable(std::vector<T> &arr, unsigned numberOfBits, T minValue, T maxValue) {
+        float step = (maxValue - minValue) / (pow(2,numberOfBits) - 1);
+        for (int k = 0; k < pow(2, numberOfBits); k++)
+            arr[k] = minValue + k * step;
+    }
     
     unsigned sizeInBits;
     std::vector<bool> binaryEncoding; // binary representation indexes angles in array [minAngle, minAngle + stepAngles, ..., maxAngle - stepAngles, maxAngle]
     float cost = std::numeric_limits<double>::infinity();
 public:
-    DESIGN_VARIABLES(unsigned numberSkinLayers = NUMBER_SKIN_LAYERS, unsigned numberSparLayers = NUMBER_SPAR_LAYERS, unsigned bitsPerLayer = BITS_PER_LAYER, float minAngle = MIN_ANGLE, float maxAngle = MAX_ANGLE);
+    DESIGN_VARIABLES(unsigned skinNumberOfLayrers = NUMBER_SKIN_LAYERS, unsigned sparNumberOfLayrers = NUMBER_SPAR_LAYERS);
     DESIGN_VARIABLES(const DESIGN_VARIABLES &arr);
     DESIGN_VARIABLES &operator=(const DESIGN_VARIABLES &arr);
     

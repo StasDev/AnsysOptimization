@@ -12,7 +12,44 @@ int My_Random_Int_f::operator()() {
     return dist(re);
 }
 
-DESIGN_VARIABLES::DESIGN_VARIABLES(unsigned numberSkinLayers, unsigned bitsPerLayer, float minAngle, float maxAngle): numberSkinLayers{numberSkinLayers}, bitsPerLayer{bitsPerLayer}, sizeInBits{numberSkinLayers * bitsPerLayer}, minAngle{minAngle}, maxAngle{maxAngle},  stepAngles((maxAngle - minAngle) / (pow(2, bitsPerLayer) - 1)), binaryEncoding(sizeInBits) {
+//Initialization static members
+//Skin
+unsigned DESIGN_VARIABLES::skinBitsPerLayer = BITS_PER_SKIN_LAYER;
+int DESIGN_VARIABLES::skinMinAngle = SKIN_MIN_ANGLE;
+int DESIGN_VARIABLES::skinMaxAngle = SKIN_MAX_ANGLE;
+//Tuning mass
+unsigned DESIGN_VARIABLES::tmBitsPerR = BITS_PER_TM_R;
+int DESIGN_VARIABLES::tmMinR = TM_MIN_R;
+int DESIGN_VARIABLES::tmMaxR = TM_MAX_R;
+unsigned DESIGN_VARIABLES::tmBitsPerL = BITS_PER_TM_L;
+int DESIGN_VARIABLES::tmMinL = TM_MIN_L;
+int DESIGN_VARIABLES::tmMaxL = TM_MAX_L;
+unsigned DESIGN_VARIABLES::tmBitsPerX = BITS_PER_TM_X;
+float DESIGN_VARIABLES::tmMinX = TM_MIN_X;
+float DESIGN_VARIABLES::tmMaxX = TM_MAX_X;
+unsigned DESIGN_VARIABLES::tmBitsPerY = BITS_PER_TM_Y;
+float DESIGN_VARIABLES::tmMinY = TM_MIN_Y;
+float DESIGN_VARIABLES::tmMaxY = TM_MAX_Y;
+//Spar
+unsigned DESIGN_VARIABLES::sparBitsPerLayer = BITS_PER_SPAR_LAYER;
+int DESIGN_VARIABLES::sparMinAngle = SPAR_MIN_ANGLE;
+int DESIGN_VARIABLES::sparMaxAngle = SPAR_MAX_ANGLE;
+unsigned DESIGN_VARIABLES::sparBitsPerWallPosition = BITS_PER_SPAR_WALL_POSITION;
+int DESIGN_VARIABLES::sparMinWallPosition = SPAR_WALL_MIN_POSITION;
+int DESIGN_VARIABLES::sparMaxWallPosition = SPAR_WALL_MAX_POSITION;
+unsigned DESIGN_VARIABLES::sparBitsPerWallAngle = BITS_PER_SPAR_WALL_ANGLE;
+int DESIGN_VARIABLES::sparMinWallAngle = SPAR_WALL_MIN_ANGLE;
+int DESIGN_VARIABLES::sparMaxWallAngle = SPAR_WALL_MAX_ANGLE;
+
+std::vector<int> DESIGN_VARIABLES::arrSkinSparAngles(pow(2, BITS_PER_SKIN_LAYER));
+std::vector<int> DESIGN_VARIABLES::arrTMR(pow(2, BITS_PER_TM_R));
+std::vector<int> DESIGN_VARIABLES::arrTML(pow(2, BITS_PER_TM_L));
+std::vector<float> DESIGN_VARIABLES::arrTMX(pow(2, BITS_PER_TM_X));
+std::vector<float> DESIGN_VARIABLES::arrTMY(pow(2, BITS_PER_TM_Y));
+std::vector<int> DESIGN_VARIABLES::arrSparBackWallAngles(pow(2, BITS_PER_SPAR_WALL_ANGLE));
+std::vector<int> DESIGN_VARIABLES::arrSparBackWallPositions(pow(2, BITS_PER_SPAR_WALL_POSITION));
+
+DESIGN_VARIABLES::DESIGN_VARIABLES(unsigned skinNumberOfLayrers, unsigned sparNumberOfLayrers): doesBladeHasSpar(sparNumberOfLayrers), skinNumberOfLayrers{skinNumberOfLayrers}, sparNumberOfLayrers{sparNumberOfLayrers}, sizeInBits{skinBitsPerLayer * skinNumberOfLayrers + sparBitsPerLayer * sparNumberOfLayrers + }, binaryEncoding(sizeInBits) {
     My_Random_Int_f RandNumber01(0, 1);
     for (int j = 0; j < sizeInBits; j++)
         binaryEncoding[j] = RandNumber01();
