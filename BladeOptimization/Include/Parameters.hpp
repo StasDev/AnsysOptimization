@@ -40,8 +40,12 @@ constexpr unsigned BITS_PER_SPAR_WALL_POSITION = 4;
 constexpr int SPAR_WALL_MIN_POSITION = 2;   // mm
 constexpr int SPAR_WALL_MAX_POSITION = 5;   // mm
 
-constexpr float MIN_ACCEPTABLE_COST = 1.5;
-constexpr float MAX_ACCEPTABLE_COST = 2;
+//constexpr float MIN_ACCEPTABLE_COST = 1.5;
+//constexpr float MAX_ACCEPTABLE_COST = 2;
+constexpr float WEIGHT_MASS = 1/3;
+constexpr float WEIGHT_NATURAL_FREQUENCIES = 1/3;
+constexpr float WEIGHT_STRENGTH = 1/3;
+
 constexpr unsigned SIZE_POPULATION = 20;
 constexpr unsigned MAX_GENERATION_NUMBER = 500;
 constexpr float PENALTY_R1 = 3;

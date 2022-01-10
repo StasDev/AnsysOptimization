@@ -114,15 +114,20 @@ public:
     friend class SIMPLE_GA;
 };
 
-class Cost_Angles_f {
-    float minAcceptableCost;
-    float maxAcceptableCost;
-    std::list<DESIGN_VARIABLES> &calculatedSkins; // reference on list with already calculated variants of blade, in particular costs
+class Cost_f {
+    static float weightM;
+    static float weightNF;
+    static float weightStrength;
+    
+    static std::list<DESIGN_VARIABLES> calculatedBlades; // reference on list with already calculated variants of blade, in particular costs
     
     float CheckCost(const DESIGN_VARIABLES &skin) const; // Check whether skin.cost already calculated if yes then return cost otherwise return -1
-    void ImposePenalty(float &cost, double r1 = PENALTY_R1, double r2 = PENALTY_R2, double beta = PENALTY_BETA) const; // new cost function: phi(x) = f(x) + rj * Gj(x), f(x) is cost function without take into account constraints, Gj(x) = [max{0, gj(x)}]^beta, where gj(x) < 0 are constraints and r1, r2, beta are parameters of penalty function.
+    float MassCost();
+    float NaturalFrequenciesCost();
+    float StrengthCost();
+//    void ImposePenalty(float &cost, double r1 = PENALTY_R1, double r2 = PENALTY_R2, double beta = PENALTY_BETA) const; // new cost function: phi(x) = f(x) + rj * Gj(x), f(x) is cost function without take into account constraints, Gj(x) = [max{0, gj(x)}]^beta, where gj(x) < 0 are constraints and r1, r2, beta are parameters of penalty function.
 public:
-    Cost_Angles_f(std::list<DESIGN_VARIABLES> &calculatedSkins, float minAcceptableCost = MIN_ACCEPTABLE_COST, float maxAcceptableCost = MAX_ACCEPTABLE_COST);
+    Cost_f();
     float operator()(DESIGN_VARIABLES &skin);
 };
 

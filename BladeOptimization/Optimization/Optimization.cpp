@@ -81,6 +81,7 @@ DESIGN_VARIABLES &DESIGN_VARIABLES::operator=(const DESIGN_VARIABLES &x) {
         binaryEncoding[i] = x.binaryEncoding[i];
     return *this;
 }
+
 unsigned DESIGN_VARIABLES::GetSizeInBits() const {
     return sizeInBits;
 }
@@ -123,7 +124,6 @@ int DESIGN_VARIABLES::GetTMR() const {
         keyR += binaryEncoding[j] * pow(2, j - indexFirstBit);
     return arrTMR[keyR];
 }
-
 void DESIGN_VARIABLES::SetTML(int L) {
     assert(L > 0);
     float stepL = (tmMaxL - tmMinL) / (pow(2,tmBitsPerL) - 1);
@@ -142,7 +142,6 @@ int DESIGN_VARIABLES::GetTML() const {
         keyL += binaryEncoding[j] * pow(2, j - indexFirstBit);
     return arrTML[keyL];
 }
-
 void DESIGN_VARIABLES::SetTMX(float x) {
     float stepX = (tmMaxX - tmMinX) / (pow(2,tmBitsPerX) - 1);
     unsigned keyX = (x - tmMinX) / stepX; // approximation
@@ -160,7 +159,6 @@ float DESIGN_VARIABLES::GetTMX() const {
         keyX += binaryEncoding[j] * pow(2, j - indexFirstBit);
     return arrTMX[keyX];
 }
-
 void DESIGN_VARIABLES::SetTMY(float y) {
     float stepY = (tmMaxY - tmMinY) / (pow(2,tmBitsPerY) - 1);
     unsigned keyY = (y - tmMinY) / stepY; // approximation
@@ -198,7 +196,6 @@ int DESIGN_VARIABLES::GetSparAngle(unsigned layer) const {
         keyAngle += binaryEncoding[j] * pow(2, j - indexFirstBit);
     return arrSkinSparAngles[keyAngle];
 }
-
 void DESIGN_VARIABLES::SetSparWallAngle(int wallAngle) {
     assert(doesBladeHasSpar);
     float stepWA = (sparMaxWallAngle - sparMinWallAngle) / (pow(2,sparBitsPerWallAngle) - 1);
@@ -218,7 +215,6 @@ int DESIGN_VARIABLES::GetSparWallAngle() const{
         keyWA += binaryEncoding[j] * pow(2, j - indexFirstBit);
     return arrSparWallAngles[keyWA];
 }
-
 void DESIGN_VARIABLES::SetSparWallPosition(int xD) {
     assert(doesBladeHasSpar);
     float stepWP = (sparMaxWallPosition - sparMinWallPosition) / (pow(2,sparBitsPerWallPosition) - 1);
@@ -239,11 +235,6 @@ int DESIGN_VARIABLES::GetSparWallPosition() const{
     return arrSparWallAngles[keyWP];
 }
 
-
-
-
-
-
 void DESIGN_VARIABLES::SetCost(float c) {
     cost = c;
 }
@@ -256,7 +247,11 @@ std::ostream &operator<<(std::ostream &os, const DESIGN_VARIABLES &x) {
     return os;
 }
 
-Cost_Angles_f::Cost_Angles_f(std::list<DESIGN_VARIABLES> &calculatedSkins, float minAcceptableCost, float maxAcceptableCost): calculatedSkins{calculatedSkins}, minAcceptableCost{minAcceptableCost}, maxAcceptableCost{maxAcceptableCost} {}
+float DESIGN_VARIABLES::weightM = WEIGHT_MASS;
+float DESIGN_VARIABLES::weightNF = WEIGHT_NATURAL_FREQUENCIES;
+float DESIGN_VARIABLES::weightStrength = WEIGHT_STRENGTH;
+std::list<DESIGN_VARIABLES> Cost_f::calculatedBlades;
+Cost_f::Cost_f(){}
 float Cost_Angles_f::CheckCost(const DESIGN_VARIABLES &skin) const {
     if(calculatedSkins.empty())
         return -1;
