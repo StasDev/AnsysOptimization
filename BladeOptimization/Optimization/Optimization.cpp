@@ -238,6 +238,9 @@ int DESIGN_VARIABLES::GetSparWallPosition() const{
 void DESIGN_VARIABLES::SetCost(float c) {
     cost = c;
 }
+float DESIGN_VARIABLES::GetCost() {
+    return cost;
+}
 
 std::ostream &operator<<(std::ostream &os, const DESIGN_VARIABLES &x) {
     for (int layer = 1; layer <= x.skinNumberOfLayers; layer++ ) {
@@ -247,10 +250,11 @@ std::ostream &operator<<(std::ostream &os, const DESIGN_VARIABLES &x) {
     return os;
 }
 
-float DESIGN_VARIABLES::weightM = WEIGHT_MASS;
-float DESIGN_VARIABLES::weightNF = WEIGHT_NATURAL_FREQUENCIES;
-float DESIGN_VARIABLES::weightStrength = WEIGHT_STRENGTH;
+float Cost_f::weightM = WEIGHT_MASS;
+float Cost_f::weightNF = WEIGHT_NATURAL_FREQUENCIES;
+float Cost_f::weightStrength = WEIGHT_STRENGTH;
 std::list<DESIGN_VARIABLES> Cost_f::calculatedBlades;
+
 Cost_f::Cost_f(){}
 float Cost_Angles_f::CheckCost(const DESIGN_VARIABLES &skin) const {
     if(calculatedSkins.empty())
@@ -270,6 +274,7 @@ float Cost_Angles_f::CheckCost(const DESIGN_VARIABLES &skin) const {
     }
     return -1;
 }
+
 void Cost_Angles_f::ImposePenalty(float &cost, double r1, double r2, double beta) const {
         //    Without death penalty approach
         //    Want (minAcceptableCost < cost < maxAcceptableCost) that equivalent to (minAcceptableCost - cost < 0 && cost - maxAcceptableCost < 0)
@@ -301,9 +306,9 @@ float TestCF_Ackley(int dimension, const DESIGN_VARIABLES &x){
 }
 
 
-float Cost_Angles_f::operator()(DESIGN_VARIABLES &skin) {
-        //    Check was cost already calculated?
-    float cost = CheckCost(skin);
+float Cost_f::operator()(DESIGN_VARIABLES &blade) {
+//    Check was cost already calculated?
+    float cost = CheckCost(blade);
     if (cost > 0)
         return cost;
 //    *****************************
@@ -311,7 +316,7 @@ float Cost_Angles_f::operator()(DESIGN_VARIABLES &skin) {
 //    cost = TestCF_SumSquares(skin.numberSkinLayers, skin);
 //    cost = TestCF_Ackley(skin.numberSkinLayers, skin);
 //    *****************************
-    skin.WriteAnglesInFileWithPath();
+    blade.WriteInFileWithPath();
 /*
      //    Ansys calculates safetyFactor blade from binaryEncoding which was wrote in file Angles.txt
      Py_Initialize();
@@ -322,8 +327,9 @@ float Cost_Angles_f::operator()(DESIGN_VARIABLES &skin) {
      cost = skin.ReadSafetyFactorFromFileWithPath();
      ImposePenalty(cost);
 */
-    skin.SetCost(cost);
-    calculatedSkins.push_back(skin);
+    cost = MassCost() + NaturalFrequenciesCost() + StrengthCost() + PenaltyCost();
+    blade.SetCost(cost);
+    calculatedBlades.push_back(blade);
     return cost;
 }
 

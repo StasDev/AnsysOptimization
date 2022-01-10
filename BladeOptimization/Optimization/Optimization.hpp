@@ -105,9 +105,10 @@ public:
     int GetSparWallPosition() const;
     
     void SetApproxAngle(float angle, unsigned layer);
-    void WriteAnglesInFileWithPath(const std::string &path = "/Users/mymac/Documents/Cpp/BladeOptimizationCpp/BladeOptimization/BladeOptimization/Files", const std::string &nameWithExtension =  "Angles.txt") const;
+    void WriteInFileWithPath(const std::string &path = "/Users/mymac/Documents/Cpp/BladeOptimizationCpp/BladeOptimization/BladeOptimization/Files", const std::string &nameWithExtension =  "Angles.txt") const;
     float ReadSafetyFactorFromFileWithPath(const std::string &path = "/Users/mymac/Documents/Cpp/BladeOptimizationCpp/BladeOptimization/BladeOptimization/Files", const std::string &nameWithExtension =  "Angles.txt");
     void SetCost(float c);
+    float GetCost();
     
     friend std::ostream &operator<<(std::ostream &os, const DESIGN_VARIABLES &x);
     friend class Cost_Angles_f;
@@ -117,7 +118,7 @@ public:
 class Cost_f {
     static float weightM;
     static float weightNF;
-    static float weightStrength;
+    static float weightS;
     
     static std::list<DESIGN_VARIABLES> calculatedBlades; // reference on list with already calculated variants of blade, in particular costs
     
@@ -125,10 +126,11 @@ class Cost_f {
     float MassCost();
     float NaturalFrequenciesCost();
     float StrengthCost();
+    float PenaltyCost();
 //    void ImposePenalty(float &cost, double r1 = PENALTY_R1, double r2 = PENALTY_R2, double beta = PENALTY_BETA) const; // new cost function: phi(x) = f(x) + rj * Gj(x), f(x) is cost function without take into account constraints, Gj(x) = [max{0, gj(x)}]^beta, where gj(x) < 0 are constraints and r1, r2, beta are parameters of penalty function.
 public:
     Cost_f();
-    float operator()(DESIGN_VARIABLES &skin);
+    float operator()(DESIGN_VARIABLES &blade);
 };
 
 class SIMPLE_GA {
