@@ -28,18 +28,13 @@ class DESIGN_VARIABLES {
     static int skinMinAngle;
     static int skinMaxAngle;
 //    Tuning mass
-    static unsigned tmBitsPerR;
-    static int tmMinR;
-    static int tmMaxR;
-    static unsigned tmBitsPerL;
-    static int tmMinL;
-    static int tmMaxL;
-    static unsigned tmBitsPerX;
-    static float tmMinX;
-    static float tmMaxX;
-    static unsigned tmBitsPerY;
-    static float tmMinY;
-    static float tmMaxY;
+    static unsigned tmBitsPerRadius;
+    static int tmMinRadius;
+    static int tmMaxRadius;
+    static unsigned tmBitsPerLength;
+    static int tmMinLength;
+    static int tmMaxLength;
+    static unsigned tmBitsPerPositionXY;
 //    Spar
     unsigned sparNumberOfLayers;
     static unsigned sparBitsPerLayer;
@@ -59,19 +54,12 @@ class DESIGN_VARIABLES {
     
 //    For decoding of binary representation is used direct addressing scheme;
     static std::vector<int> arrSkinSparAngles;
-    static std::vector<int> arrTMR;
-    static std::vector<int> arrTML;
-    static std::vector<float> arrTMX;
-    static std::vector<float> arrTMY;
+    static std::vector<int> arrTMRadius;
+    static std::vector<int> arrTMLength;
     static std::vector<int> arrSparWallAngles;
     static std::vector<int> arrSparWallPositions;
     
-    template <typename T>
-    static void FillDirectAdressingTable(std::vector<T> &arr, unsigned numberOfBits, T minValue, T maxValue) {
-        float step = (maxValue - minValue) / (pow(2,numberOfBits) - 1);
-        for (int k = 0; k < pow(2, numberOfBits); k++)
-            arr[k] = minValue + k * step;
-    }
+    static void FillDirectAdressingTable(std::vector<int> &arr, unsigned numberOfBits, int minValue, int maxValue);
     static void FillAllDirectAdressingTables(bool hasSpar);
     
 public:
@@ -83,17 +71,14 @@ public:
     void SetApproxSkinAngle(unsigned layer, int angle);
     int GetSkinAngle(unsigned layer) const;
     
-    void SetTMR(int r);
-    int GetTMR() const;
+    void SetTMRadius(int r);
+    int GetTMRadius() const;
     
-    void SetTML(int L);
-    int GetTML() const;
+    void SetTMLength(int L);
+    int GetTMLength() const;
     
-    void SetTMX(float x);
-    float GetTMX() const;
-    
-    void SetTMY(float y);
-    float GetTMY() const;
+    void SetTMPosition(unsigned keyPosition);
+    unsigned GetTMPosition() const;
     
     void SetApproxSparAngle(unsigned layer, int angle);
     int GetSparAngle(unsigned layer) const;
@@ -104,32 +89,59 @@ public:
     void SetSparWallPosition(int xD);
     int GetSparWallPosition() const;
     
-    void SetApproxAngle(float angle, unsigned layer);
-    void WriteInFileWithPath(const std::string &path = "/Users/mymac/Documents/Cpp/BladeOptimizationCpp/BladeOptimization/BladeOptimization/Files", const std::string &nameWithExtension =  "Angles.txt") const;
-    float ReadSafetyFactorFromFileWithPath(const std::string &path = "/Users/mymac/Documents/Cpp/BladeOptimizationCpp/BladeOptimization/BladeOptimization/Files", const std::string &nameWithExtension =  "Angles.txt");
     void SetCost(float c);
     float GetCost();
     
+    void WriteInFileWithPath(const std::string &path = "/Users/mymac/Documents/Cpp/BladeOptimizationCpp/BladeOptimization/BladeOptimization/Files", const std::string &nameWithExtension =  "Database.txt") const;
+//    float ReadSafetyFactorFromFileWithPath(const std::string &path = "/Users/mymac/Documents/Cpp/BladeOptimizationCpp/BladeOptimization/BladeOptimization/Files", const std::string &nameWithExtension =  "Database.txt");
     friend std::ostream &operator<<(std::ostream &os, const DESIGN_VARIABLES &x);
-    friend class Cost_Angles_f;
-    friend class SIMPLE_GA;
+    
+    
+    friend class Cost_f;
+//    friend class SIMPLE_GA;
 };
 
 class Cost_f {
-    static float weightM;
-    static float weightNF;
-    static float weightS;
+    static float weightMass;
+    static float weightNatrualFrequencies;
+    static float weightStrength;
     
-    static std::list<DESIGN_VARIABLES> calculatedBlades; // reference on list with already calculated variants of blade, in particular costs
+    static float weightSigma;
+    static float weightUZ;
+    static float weightUR;
+    static float weightUTwist;
+    
+    static float OmegaMin;
+    static float OmegaMax;
+    static float rNF;
+    static float betaNF;
+    
+    static float safetyFactorMin;
+    static float safetyFactorMax;
+    static float rSF;
+    static float betaSF;
+    
+    static float maxAcceptableBiasTipFlap;
+    static float rBTF;
+    static float betaBTF;
+    
+    static float maxAcceptableTipSectionTwist;
+    static float rTwist;
+    static float betaTwist;
+    
+
+    static std::list<DESIGN_VARIABLES> calculatedBlades;
+    
+    float massBaselineBlade;
+    float maxEqStressInBaselineBlade;
     
     float CheckCost(const DESIGN_VARIABLES &skin) const; // Check whether skin.cost already calculated if yes then return cost otherwise return -1
-    float MassCost();
-    float NaturalFrequenciesCost();
-    float StrengthCost();
-    float PenaltyCost();
-//    void ImposePenalty(float &cost, double r1 = PENALTY_R1, double r2 = PENALTY_R2, double beta = PENALTY_BETA) const; // new cost function: phi(x) = f(x) + rj * Gj(x), f(x) is cost function without take into account constraints, Gj(x) = [max{0, gj(x)}]^beta, where gj(x) < 0 are constraints and r1, r2, beta are parameters of penalty function.
+    float CostMass(const DESIGN_VARIABLES &blade); // massBaselineBlade measured in grams
+    float CostNaturalFrequencies(const DESIGN_VARIABLES &blade, unsigned quantityConsideredNatrualFrequencies = 10, unsigned quantityConsideredAirloadHarmonics = 10);
+    float CostStress(const DESIGN_VARIABLES &blade);
+    float CostPenalty(const DESIGN_VARIABLES &blade);
 public:
-    Cost_f();
+    Cost_f(DESIGN_VARIABLES &baselineBlade);
     float operator()(DESIGN_VARIABLES &blade);
 };
 
@@ -140,11 +152,10 @@ class SIMPLE_GA {
     std::vector<DESIGN_VARIABLES> population;
     std::vector<DESIGN_VARIABLES> children;
     
-    std::list<DESIGN_VARIABLES> calculatedSkins;
-    Cost_Angles_f Cost; // has information about already calculated costs
+    Cost_f Cost; // has information about already calculated costs
     DESIGN_VARIABLES bestIndivid;
     
-    std::vector<unsigned> Selection() const; // select individs from population for cossover, return indexes parents
+    std::vector<unsigned> Selection() const; // select individs from population for cossover, return indexes of two parents
     void Crossover(unsigned indexParent1, unsigned indexParent2);
     void Mutation();
     

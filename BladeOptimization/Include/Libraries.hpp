@@ -16,6 +16,7 @@
 #include <string>
 #include <fstream>
 #include <chrono>
+#include <memory>
 
 //#include </Library/Frameworks/Python.framework/Versions/3.10/include/python3.10/Python.h>
 //#define NDEBUG // uncomment from off all assert checks in release version

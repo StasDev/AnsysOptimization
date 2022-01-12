@@ -7,7 +7,7 @@
 
 #include "Optimization.hpp"
 
-My_Random_Int_f::My_Random_Int_f(int minValue, int maxValue):  dist{minValue, maxValue} {}
+My_Random_Int_f::My_Random_Int_f(int minValue, int maxValue): dist{minValue, maxValue} {}
 int My_Random_Int_f::operator()() {
     return dist(re);
 }
@@ -18,18 +18,13 @@ unsigned DESIGN_VARIABLES::skinBitsPerLayer = BITS_PER_SKIN_LAYER;
 int DESIGN_VARIABLES::skinMinAngle = SKIN_MIN_ANGLE;
 int DESIGN_VARIABLES::skinMaxAngle = SKIN_MAX_ANGLE;
 //Tuning mass
-unsigned DESIGN_VARIABLES::tmBitsPerR = BITS_PER_TM_R;
-int DESIGN_VARIABLES::tmMinR = TM_MIN_R;
-int DESIGN_VARIABLES::tmMaxR = TM_MAX_R;
-unsigned DESIGN_VARIABLES::tmBitsPerL = BITS_PER_TM_L;
-int DESIGN_VARIABLES::tmMinL = TM_MIN_L;
-int DESIGN_VARIABLES::tmMaxL = TM_MAX_L;
-unsigned DESIGN_VARIABLES::tmBitsPerX = BITS_PER_TM_X;
-float DESIGN_VARIABLES::tmMinX = TM_MIN_X;
-float DESIGN_VARIABLES::tmMaxX = TM_MAX_X;
-unsigned DESIGN_VARIABLES::tmBitsPerY = BITS_PER_TM_Y;
-float DESIGN_VARIABLES::tmMinY = TM_MIN_Y;
-float DESIGN_VARIABLES::tmMaxY = TM_MAX_Y;
+unsigned DESIGN_VARIABLES::tmBitsPerRadius = BITS_PER_TM_R;
+int DESIGN_VARIABLES::tmMinRadius = TM_MIN_R;
+int DESIGN_VARIABLES::tmMaxRadius = TM_MAX_R;
+unsigned DESIGN_VARIABLES::tmBitsPerLength = BITS_PER_TM_L;
+int DESIGN_VARIABLES::tmMinLength = TM_MIN_L;
+int DESIGN_VARIABLES::tmMaxLength = TM_MAX_L;
+unsigned DESIGN_VARIABLES::tmBitsPerPositionXY = BITS_PER_TM_XY;
 //Spar
 unsigned DESIGN_VARIABLES::sparBitsPerLayer = BITS_PER_SPAR_LAYER;
 int DESIGN_VARIABLES::sparMinAngle = SPAR_MIN_ANGLE;
@@ -42,26 +37,28 @@ int DESIGN_VARIABLES::sparMinWallAngle = SPAR_WALL_MIN_ANGLE;
 int DESIGN_VARIABLES::sparMaxWallAngle = SPAR_WALL_MAX_ANGLE;
 
 std::vector<int> DESIGN_VARIABLES::arrSkinSparAngles(pow(2, BITS_PER_SKIN_LAYER));
-std::vector<int> DESIGN_VARIABLES::arrTMR(pow(2, BITS_PER_TM_R));
-std::vector<int> DESIGN_VARIABLES::arrTML(pow(2, BITS_PER_TM_L));
-std::vector<float> DESIGN_VARIABLES::arrTMX(pow(2, BITS_PER_TM_X));
-std::vector<float> DESIGN_VARIABLES::arrTMY(pow(2, BITS_PER_TM_Y));
+std::vector<int> DESIGN_VARIABLES::arrTMRadius(pow(2, BITS_PER_TM_R));
+std::vector<int> DESIGN_VARIABLES::arrTMLength(pow(2, BITS_PER_TM_L));
 std::vector<int> DESIGN_VARIABLES::arrSparWallAngles(pow(2, BITS_PER_SPAR_WALL_ANGLE));
 std::vector<int> DESIGN_VARIABLES::arrSparWallPositions(pow(2, BITS_PER_SPAR_WALL_POSITION));
 
+void DESIGN_VARIABLES::FillDirectAdressingTable(std::vector<int> &arr, unsigned numberOfBits, int minValue, int maxValue) {
+    float step = (maxValue - minValue) / (pow(2,numberOfBits) - 1);
+    for (int k = 0; k < pow(2, numberOfBits); k++)
+        arr[k] = minValue + k * step;
+}
+
 void DESIGN_VARIABLES::FillAllDirectAdressingTables(bool hasSpar) {
     FillDirectAdressingTable(arrSkinSparAngles, skinBitsPerLayer, skinMinAngle, skinMaxAngle);
-    FillDirectAdressingTable(arrTMR, tmBitsPerR, tmMinR, tmMaxR);
-    FillDirectAdressingTable(arrTML, tmBitsPerL, tmMinL, tmMaxL);
-    FillDirectAdressingTable(arrTMX, tmBitsPerX, tmMinX, tmMaxX);
-    FillDirectAdressingTable(arrTMY, tmBitsPerY, tmMinY, tmMaxY);
+    FillDirectAdressingTable(arrTMRadius, tmBitsPerRadius, tmMinRadius, tmMaxRadius);
+    FillDirectAdressingTable(arrTMLength, tmBitsPerLength, tmMinLength, tmMaxLength);
     if (hasSpar) {
         FillDirectAdressingTable(arrSparWallAngles, sparBitsPerWallAngle, sparMinWallAngle, sparMaxWallAngle);
         FillDirectAdressingTable(arrSparWallPositions, sparBitsPerWallPosition, sparMinWallPosition, sparMaxWallPosition);
     }
 }
 
-DESIGN_VARIABLES::DESIGN_VARIABLES(unsigned skinNumberOfLayers, unsigned sparNumberOfLayers): doesBladeHasSpar(sparNumberOfLayers), skinNumberOfLayers{skinNumberOfLayers}, sparNumberOfLayers{sparNumberOfLayers}, sizeInBits{skinBitsPerLayer * skinNumberOfLayers + tmBitsPerR + tmBitsPerL + tmBitsPerX + tmBitsPerY}, binaryEncoding(sizeInBits) {
+DESIGN_VARIABLES::DESIGN_VARIABLES(unsigned skinNumberOfLayers, unsigned sparNumberOfLayers): doesBladeHasSpar(sparNumberOfLayers), skinNumberOfLayers{skinNumberOfLayers}, sparNumberOfLayers{sparNumberOfLayers}, sizeInBits{skinBitsPerLayer * skinNumberOfLayers + tmBitsPerRadius + tmBitsPerLength + tmBitsPerPositionXY}, binaryEncoding(sizeInBits) {
     My_Random_Int_f RandNumber01(0, 1);
     if (doesBladeHasSpar)
         sizeInBits += sparNumberOfLayers * sparBitsPerLayer + sparBitsPerWallAngle + sparBitsPerWallPosition;
@@ -106,82 +103,64 @@ int DESIGN_VARIABLES::GetSkinAngle(unsigned layer) const {
     return arrSkinSparAngles[keyAngle];
 }
 
-void DESIGN_VARIABLES::SetTMR(int r) {
+void DESIGN_VARIABLES::SetTMRadius(int r) {
     assert(r > 0);
-    float stepR = (tmMaxR - tmMinR) / (pow(2,tmBitsPerR) - 1);
-    unsigned keyR = (r - tmMinR) / stepR; // approximation
+    float stepR = (tmMaxRadius - tmMinRadius) / (pow(2,tmBitsPerRadius) - 1);
+    unsigned keyR = (r - tmMinRadius) / stepR; // approximation
     unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer;
     unsigned oneBit = 1;
-    for (int j = indexFirstBit; j < indexFirstBit + tmBitsPerR; j++) {
+    for (int j = indexFirstBit; j < indexFirstBit + tmBitsPerRadius; j++) {
         binaryEncoding[j] = keyR & oneBit;
         keyR >>= 1; // equiv /= 2
     }
 }
-int DESIGN_VARIABLES::GetTMR() const {
+int DESIGN_VARIABLES::GetTMRadius() const {
     unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer;
     unsigned keyR = 0;
-    for (unsigned j = indexFirstBit; j < indexFirstBit + tmBitsPerR; j++)
+    for (unsigned j = indexFirstBit; j < indexFirstBit + tmBitsPerRadius; j++)
         keyR += binaryEncoding[j] * pow(2, j - indexFirstBit);
-    return arrTMR[keyR];
+    return arrTMRadius[keyR];
 }
-void DESIGN_VARIABLES::SetTML(int L) {
+void DESIGN_VARIABLES::SetTMLength(int L) {
     assert(L > 0);
-    float stepL = (tmMaxL - tmMinL) / (pow(2,tmBitsPerL) - 1);
-    unsigned keyL = (L - tmMinL) / stepL; // approximation
-    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerR;
+    float stepL = (tmMaxLength - tmMinLength) / (pow(2,tmBitsPerLength) - 1);
+    unsigned keyL = (L - tmMinLength) / stepL; // approximation
+    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerRadius;
     unsigned oneBit = 1;
-    for (int j = indexFirstBit; j < indexFirstBit + tmBitsPerL; j++) {
+    for (int j = indexFirstBit; j < indexFirstBit + tmBitsPerLength; j++) {
         binaryEncoding[j] = keyL & oneBit;
         keyL >>= 1; // equiv /= 2
     }
 }
-int DESIGN_VARIABLES::GetTML() const {
-    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerR;
+int DESIGN_VARIABLES::GetTMLength() const {
+    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerRadius;
     unsigned keyL = 0;
-    for (unsigned j = indexFirstBit; j < indexFirstBit + tmBitsPerL; j++)
+    for (unsigned j = indexFirstBit; j < indexFirstBit + tmBitsPerLength; j++)
         keyL += binaryEncoding[j] * pow(2, j - indexFirstBit);
-    return arrTML[keyL];
+    return arrTMLength[keyL];
 }
-void DESIGN_VARIABLES::SetTMX(float x) {
-    float stepX = (tmMaxX - tmMinX) / (pow(2,tmBitsPerX) - 1);
-    unsigned keyX = (x - tmMinX) / stepX; // approximation
-    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerR + tmBitsPerL;
+void DESIGN_VARIABLES::SetTMPosition(unsigned keyPosition) {
+    assert(keyPosition < pow(2, tmBitsPerPositionXY));
+    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerRadius + tmBitsPerLength;
     unsigned oneBit = 1;
-    for (int j = indexFirstBit; j < indexFirstBit + tmBitsPerX; j++) {
-        binaryEncoding[j] = keyX & oneBit;
-        keyX >>= 1; // equiv /= 2
+    for (int j = indexFirstBit; j < indexFirstBit + tmBitsPerPositionXY; j++) {
+        binaryEncoding[j] = keyPosition & oneBit;
+        keyPosition >>= 1; // equiv /= 2
     }
 }
-float DESIGN_VARIABLES::GetTMX() const {
-    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerR + tmBitsPerL;
-    unsigned keyX = 0;
-    for (unsigned j = indexFirstBit; j < indexFirstBit + tmBitsPerX; j++)
-        keyX += binaryEncoding[j] * pow(2, j - indexFirstBit);
-    return arrTMX[keyX];
-}
-void DESIGN_VARIABLES::SetTMY(float y) {
-    float stepY = (tmMaxY - tmMinY) / (pow(2,tmBitsPerY) - 1);
-    unsigned keyY = (y - tmMinY) / stepY; // approximation
-    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerR + tmBitsPerL + tmBitsPerX;
-    unsigned oneBit = 1;
-    for (int j = indexFirstBit; j < indexFirstBit + tmBitsPerY; j++) {
-        binaryEncoding[j] = keyY & oneBit;
-        keyY >>= 1; // equiv /= 2
-    }
-}
-float DESIGN_VARIABLES::GetTMY() const {
-    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerR + tmBitsPerL + tmBitsPerX;
-    unsigned keyY = 0;
-    for (unsigned j = indexFirstBit; j < indexFirstBit + tmBitsPerY; j++)
-        keyY += binaryEncoding[j] * pow(2, j - indexFirstBit);
-    return arrTMY[keyY];
+unsigned DESIGN_VARIABLES::GetTMPosition() const {
+    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerRadius + tmBitsPerLength;
+    unsigned keyPosition = 0;
+    for (unsigned j = indexFirstBit; j < indexFirstBit + tmBitsPerPositionXY; j++)
+        keyPosition += binaryEncoding[j] * pow(2, j - indexFirstBit);
+    return keyPosition;
 }
 
 void DESIGN_VARIABLES::SetApproxSparAngle(unsigned layer, int angle) {
     assert(doesBladeHasSpar && (layer <= sparNumberOfLayers) && (sparMinAngle <= angle) && (angle <= sparMaxAngle));
     float stepByAngle = (sparMaxAngle - sparMinAngle) / (pow(2,sparBitsPerLayer) - 1);
     unsigned keyAngle = (angle - sparMinAngle) / stepByAngle; // approximation
-    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerR + tmBitsPerL + tmBitsPerX + tmBitsPerY + sparBitsPerLayer * (layer - 1);
+    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerRadius + tmBitsPerLength + tmBitsPerPositionXY + sparBitsPerLayer * (layer - 1);
     unsigned oneBit = 1;
     for (int j = indexFirstBit; j < indexFirstBit + sparBitsPerLayer; j++) {
         binaryEncoding[j] = keyAngle & oneBit;
@@ -190,7 +169,7 @@ void DESIGN_VARIABLES::SetApproxSparAngle(unsigned layer, int angle) {
 }
 int DESIGN_VARIABLES::GetSparAngle(unsigned layer) const {
     assert(doesBladeHasSpar && layer <= sparNumberOfLayers);
-    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerR + tmBitsPerL + tmBitsPerX + tmBitsPerY + sparBitsPerLayer * (layer - 1);
+    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerRadius + tmBitsPerLength + tmBitsPerPositionXY + sparBitsPerLayer * (layer - 1);
     unsigned keyAngle = 0;
     for (unsigned j = indexFirstBit; j < indexFirstBit + sparBitsPerLayer; j++)
         keyAngle += binaryEncoding[j] * pow(2, j - indexFirstBit);
@@ -200,7 +179,7 @@ void DESIGN_VARIABLES::SetSparWallAngle(int wallAngle) {
     assert(doesBladeHasSpar);
     float stepWA = (sparMaxWallAngle - sparMinWallAngle) / (pow(2,sparBitsPerWallAngle) - 1);
     unsigned keyWA = (wallAngle - sparMinWallAngle) / stepWA; // approximation
-    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerR + tmBitsPerL + tmBitsPerX + tmBitsPerY + sparNumberOfLayers * sparBitsPerLayer;
+    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerRadius + tmBitsPerLength + tmBitsPerPositionXY + sparNumberOfLayers * sparBitsPerLayer;
     unsigned oneBit = 1;
     for (int j = indexFirstBit; j < indexFirstBit + sparBitsPerWallAngle; j++) {
         binaryEncoding[j] = keyWA & oneBit;
@@ -209,7 +188,7 @@ void DESIGN_VARIABLES::SetSparWallAngle(int wallAngle) {
 }
 int DESIGN_VARIABLES::GetSparWallAngle() const{
     assert(doesBladeHasSpar);
-    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerR + tmBitsPerL + tmBitsPerX + tmBitsPerY + sparNumberOfLayers * sparBitsPerLayer;
+    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerRadius + tmBitsPerLength + tmBitsPerPositionXY + sparNumberOfLayers * sparBitsPerLayer;
     unsigned keyWA = 0;
     for (unsigned j = indexFirstBit; j < indexFirstBit + sparBitsPerWallAngle; j++)
         keyWA += binaryEncoding[j] * pow(2, j - indexFirstBit);
@@ -219,7 +198,7 @@ void DESIGN_VARIABLES::SetSparWallPosition(int xD) {
     assert(doesBladeHasSpar);
     float stepWP = (sparMaxWallPosition - sparMinWallPosition) / (pow(2,sparBitsPerWallPosition) - 1);
     unsigned keyWP = (xD - sparMinWallPosition) / stepWP; // approximation
-    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerR + tmBitsPerL + tmBitsPerX + tmBitsPerY + sparNumberOfLayers * sparBitsPerLayer + sparBitsPerWallAngle;
+    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerRadius + tmBitsPerLength + tmBitsPerPositionXY + sparNumberOfLayers * sparBitsPerLayer + sparBitsPerWallAngle;
     unsigned oneBit = 1;
     for (int j = indexFirstBit; j < indexFirstBit + sparBitsPerWallPosition; j++) {
         binaryEncoding[j] = keyWP & oneBit;
@@ -228,7 +207,7 @@ void DESIGN_VARIABLES::SetSparWallPosition(int xD) {
 }
 int DESIGN_VARIABLES::GetSparWallPosition() const{
     assert(doesBladeHasSpar);
-    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerR + tmBitsPerL + tmBitsPerX + tmBitsPerY + sparNumberOfLayers * sparBitsPerLayer + sparBitsPerWallAngle;
+    unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerRadius + tmBitsPerLength + tmBitsPerPositionXY + sparNumberOfLayers * sparBitsPerLayer + sparBitsPerWallAngle;
     unsigned keyWP = 0;
     for (unsigned j = indexFirstBit; j < indexFirstBit + sparBitsPerWallPosition; j++)
         keyWP += binaryEncoding[j] * pow(2, j - indexFirstBit);
@@ -242,50 +221,129 @@ float DESIGN_VARIABLES::GetCost() {
     return cost;
 }
 
+void DESIGN_VARIABLES::WriteInFileWithPath(const std::string &path, const std::string &nameWithExtension) const {
+   //Write object data in file
+}
+//float ReadSafetyFactorFromFileWithPath(const std::string &path, const std::string &nameWithExtension) {
+//}
 std::ostream &operator<<(std::ostream &os, const DESIGN_VARIABLES &x) {
     for (int layer = 1; layer <= x.skinNumberOfLayers; layer++ ) {
-        os << "Layer " << layer << " has angle " << arr.GetAngle(layer) << '\n';
-//        ...
+        os << "Layer " << layer << " has angle " << x.GetSkinAngle(layer) << '\n';
+//        Other variables ...
     }
     return os;
 }
 
-float Cost_f::weightM = WEIGHT_MASS;
-float Cost_f::weightNF = WEIGHT_NATURAL_FREQUENCIES;
+//Weights for cost functions
+float Cost_f::weightMass = WEIGHT_MASS;
+float Cost_f::weightNatrualFrequencies = WEIGHT_NATURAL_FREQUENCIES;
 float Cost_f::weightStrength = WEIGHT_STRENGTH;
+//Weights for penalty (constraints) functions
+float Cost_f::weightSigma = WEIGHT_SIGMA;
+float Cost_f::weightUZ = WEIGHT_UZ;
+float Cost_f::weightUR = WEIGHT_UR;
+float Cost_f::weightUTwist = WEIGHT_UTWIST;
+// List of blades with already calculated costs
 std::list<DESIGN_VARIABLES> Cost_f::calculatedBlades;
 
-Cost_f::Cost_f(){}
-float Cost_Angles_f::CheckCost(const DESIGN_VARIABLES &skin) const {
-    if(calculatedSkins.empty())
+float Cost_f::OmegaMin = MAIN_ROTOR_MIN_SPEED;
+float Cost_f::OmegaMax = MAIN_ROTOR_MAX_SPEED;
+float Cost_f::rNF = R_NF;
+float Cost_f::betaNF = BETA_NF;
+float Cost_f::safetyFactorMin = SAFETY_FACTOR_MIN;
+float Cost_f::safetyFactorMax = SAFETY_FACTOR_MAX;
+float Cost_f::rSF = R_SF;
+float Cost_f::betaSF = BETA_SF;
+float Cost_f::maxAcceptableBiasTipFlap = MAX_ACCEPTABLE_BIAS_TIP_FLAP;
+float Cost_f::rBTF = R_BTF;
+float Cost_f::betaBTF = BETA_BTF;
+float Cost_f::maxAcceptableTipSectionTwist = MAX_ACCEPTABLE_TWIST_ANGLE;
+float Cost_f::rTwist = R_TWIST;
+float Cost_f::betaTwist = BETA_TWIST;
+
+float Cost_f::CheckCost(const DESIGN_VARIABLES &blade) const {
+    if(calculatedBlades.empty())
         return -1;
-    bool isKeyAlreadyCalculated;
-    for (auto node = calculatedSkins.begin(); node != calculatedSkins.end(); node++) {
-        isKeyAlreadyCalculated = true;
-        assert(node->sizeInBits == skin.sizeInBits);
-        for (int j = 0; j < skin.sizeInBits; j++) {
-            if (node->binaryEncoding[j] != skin.binaryEncoding[j]) {
-                isKeyAlreadyCalculated = false;
+    bool isBladeAlreadyConsidered;
+    for (auto node = calculatedBlades.begin(); node != calculatedBlades.end(); node++) {
+        isBladeAlreadyConsidered = true;
+        assert(node->GetSizeInBits() == blade.GetSizeInBits());
+        for (int j = 0; j < blade.GetSizeInBits(); j++) {
+            if (node->binaryEncoding[j] != blade.binaryEncoding[j]) {
+                isBladeAlreadyConsidered = false;
                 break;
             }
         }
-        if (isKeyAlreadyCalculated)
+        if (isBladeAlreadyConsidered)
             return node->cost;
     }
     return -1;
 }
 
-void Cost_Angles_f::ImposePenalty(float &cost, double r1, double r2, double beta) const {
-        //    Without death penalty approach
-        //    Want (minAcceptableCost < cost < maxAcceptableCost) that equivalent to (minAcceptableCost - cost < 0 && cost - maxAcceptableCost < 0)
-    cost = abs((minAcceptableCost + maxAcceptableCost) / 2 - cost) + r1 * pow(std::max(0.f, minAcceptableCost - cost), beta) + r2 * pow(std::max(0.f, cost - maxAcceptableCost), beta);
+float Cost_f::CostMass(const DESIGN_VARIABLES &blade) {
+    float massBlade; // <= ANSYS
+    return massBlade / massBaselineBlade;
+}
+float Cost_f::CostNaturalFrequencies(const DESIGN_VARIABLES &blade, unsigned quantityConsideredNatrualFrequencies, unsigned quantityConsideredAirloadHarmonics) {
+//    From modal analysis in ANSYS we have two arrarys nFLow[] and nFHigh[] of monotonically increasing natural frequensies of the considered blade for main rotor rotate frequencies OmegaMin and OmegaMax, resprctively, where [OmegaMin, OmegaMax] - interval of work frequencies of the main rotor
+    auto nFMin = std::make_unique<float[]>(quantityConsideredNatrualFrequencies); // <= ANSYS
+    auto nFMax = std::make_unique<float[]>(quantityConsideredNatrualFrequencies); // <= ANSYS
+//    If displacement arrangement all natrual friquencies for low and high main rotor speeds the same then we can use next simple way to approximation fro frequencies curves
+//    omega_i = a_i Omega^2 + b_i, Omega in [OmegaMin, OmegaMax], omega_j -- j-th natrual frequency of the blande, a_j and b_j - coefficients which can be finded condiditons omega_j(OmegaMin) = nFMin[j] and omega_j(OmegaMax) = nFMax[j]
+    float minDist = std::numeric_limits<float>::infinity();
+    auto dist = minDist;
+    float a; // equiv a_i
+    float b; // equiv b_i
+    float OmegaRes1;
+    float OmegaRes2;
+    float D;
+    for (int j = 0; j < quantityConsideredNatrualFrequencies; j++) {
+        a = (nFMax[j] - nFMin[j]) / (pow(OmegaMax, 2) - pow(OmegaMin, 2));
+        b = nFMin[j] - a * pow(OmegaMin, 2);
+        for (int k = 0; k < quantityConsideredAirloadHarmonics; k++) {
+            D = pow(k, 2) - 4 * a * b;
+            OmegaRes1 = (k - sqrt(D)) / (2 * a);
+            OmegaRes2 = (k + sqrt(D)) / (2 * a);
+            dist = std::min(abs((OmegaMin + OmegaMax) / 2 - OmegaRes1), abs(OmegaRes2 - (OmegaMin + OmegaMax) / 2));
+            if (dist < minDist)
+                minDist = dist;
+        }
+    }
+    float cost = - minDist;
+    float penalty = rNF * pow(std::max(0.f, (OmegaMax - OmegaMin) / 2 + OmegaMax / 15 - minDist), betaNF);
+    return cost + penalty;
+}
+float Cost_f::CostStress(const DESIGN_VARIABLES &blade) {
+    float maxSigmaEq; // <= ANSYS
+    return maxSigmaEq / maxEqStressInBaselineBlade;
 }
 
-    //Simple cost functions for debugging
+float Cost_f::CostPenalty(const DESIGN_VARIABLES &blade) {
+//    Strength constraints - maximum equivalent stresses
+    float safetyFactor; // <= ANSYS
+    float g_strength = rSF * pow(std::max(0.f, abs((safetyFactorMin + safetyFactorMax) / 2 - safetyFactor) - (safetyFactorMax + safetyFactorMin) / 2), betaSF);
+//    Distortion of the blade shape = bias tip of the blade + twisting/detwisting
+    float biasTipFlap; // <= ANSYS
+    float g_uZ = rBTF * pow(std::max(0.f, abs(biasTipFlap) - maxAcceptableBiasTipFlap), betaBTF);
+//    float biasTipRadius; // <= ANSYS
+//    float g_uR = ;//biasTipRadius;
+    float twistTipSection; // <= ANSYS
+    float g_uTwist = rTwist * pow(std::max(0.f, twistTipSection - maxAcceptableTipSectionTwist), betaTwist);
+    
+    assert(abs(weightStrength + weightUZ + weightUTwist - 1) < 1e-4); // + weightUR
+    return weightStrength * g_strength + weightUZ * g_uZ + weightUTwist * g_uTwist; // + weightUR * g_uR 
+}
+
+Cost_f::Cost_f(DESIGN_VARIABLES &baselineBlade) {
+    massBaselineBlade; // <= ANSYS
+    maxEqStressInBaselineBlade; // <= ANSYS
+}
+
+//Simple cost functions for debugging
 float TestCF_SumSquares(int dimension, const DESIGN_VARIABLES &x){
     float cost = 0;
     for (int j = 1; j <= dimension; j++) {
-        cost += pow(x.GetAngle(j), 2);
+        cost += pow(x.GetSkinAngle(j), 2);
     }
     return cost;
 }
@@ -298,13 +356,12 @@ float TestCF_Ackley(int dimension, const DESIGN_VARIABLES &x){
     float sumX = 0;
     float sumCosX = 0;
     for (int j = 1; j <= d; j++) {
-        sumX += pow(x.GetAngle(j), 2);
-        sumCosX += cos(c * x.GetAngle(j));
+        sumX += pow(x.GetSkinAngle(j), 2);
+        sumCosX += cos(c * x.GetSkinAngle(j));
     }
     cost = -a * exp(-b * sqrt(sumX/d)) - exp(sumCosX/d) + a + exp(1);
     return cost;
 }
-
 
 float Cost_f::operator()(DESIGN_VARIABLES &blade) {
 //    Check was cost already calculated?
@@ -317,103 +374,93 @@ float Cost_f::operator()(DESIGN_VARIABLES &blade) {
 //    cost = TestCF_Ackley(skin.numberSkinLayers, skin);
 //    *****************************
     blade.WriteInFileWithPath();
-/*
-     //    Ansys calculates safetyFactor blade from binaryEncoding which was wrote in file Angles.txt
-     Py_Initialize();
-     FILE* fp = fopen("/Users/stanislavdumanskij/Documents/GraphiteWork_small/Projects/HelicopterMianRotor/BladeOptimizationCpp/BladeOptimizationCpp/PythonFiles/test_script.py", "r");
-     PyRun_AnyFile(fp, "/Users/stanislavdumanskij/Documents/GraphiteWork_small/Projects/HelicopterMianRotor/BladeOptimizationCpp/BladeOptimizationCpp/PythonFiles/test_script.py");
-     Py_Finalize();
-     
-     cost = skin.ReadSafetyFactorFromFileWithPath();
-     ImposePenalty(cost);
-*/
-    cost = MassCost() + NaturalFrequenciesCost() + StrengthCost() + PenaltyCost();
+    cost = weightMass * CostMass(blade) + weightNatrualFrequencies * CostNaturalFrequencies(blade) + weightStrength * CostStress(blade) + CostPenalty(blade);
     blade.SetCost(cost);
     calculatedBlades.push_back(blade);
     return cost;
 }
 
-SIMPLE_GA::SIMPLE_GA(unsigned sizePopulation, unsigned maxGenerationNumber, float minAcceptableCost, float maxAcceptableCost, float mutationRate): sizePopulation{sizePopulation}, maxGenerationNumber{maxGenerationNumber}, mutationRate{mutationRate}, population(sizePopulation), calculatedSkins{}, Cost{calculatedSkins, minAcceptableCost, maxAcceptableCost} {
-    bestIndivid.SetCost(std::numeric_limits<float>::infinity());
-    Optimization();
-    std::cout << "\n\n Best individual: \n" << bestIndivid << "It has cost is " << bestIndivid.cost << '\n';
-    bestIndivid.WriteAnglesInFileWithPath();
-    std::cout << "Best individ cost is " << bestIndivid.ReadSafetyFactorFromFileWithPath() << '\n';
-}
-
-std::vector<unsigned> SIMPLE_GA::Selection() const {
-    unsigned indexParent1;
-    unsigned indexParent2;
-    float totalCost = 0;
-    for (auto &ind : population)
-        totalCost += ind.cost;
-    std::vector<float> indCost(sizePopulation);
-    for (int j = 0; j < sizePopulation; j++)
-        indCost[j] = population[j].cost / totalCost * 100;
-    
-        //    for (int j = 0; j < sizePopulation; j++)
-        //        std::cout << indCost[j] << '\n';
-    
-    My_Random_Int_f RandomNumber1_100(1, 100);
-    unsigned r = RandomNumber1_100();
-    unsigned wheel = 0;
-    unsigned indexIndivid = 0;
-    while (indexIndivid < sizePopulation && wheel < r) {
-        wheel += indCost[indexIndivid];
-        indexIndivid++;
-    }
-    indexParent1 = --indexIndivid;
-    r = RandomNumber1_100();
-    wheel = 0;
-    indexIndivid = 0;
-    while (indexIndivid < sizePopulation && wheel < r) {
-        wheel += indCost[indexIndivid];
-        indexIndivid++;
-    }
-    indexParent2 = --indexIndivid;
-    return std::vector<unsigned>{indexParent1, indexParent2};
-}
-void SIMPLE_GA::Crossover(unsigned indexParent1, unsigned indexParent2) {
-    DESIGN_VARIABLES children1{population[indexParent1]};
-    DESIGN_VARIABLES children2{population[indexParent2]};
-    My_Random_Int_f RandomNumber(1, children1.GetNumberOfBits() - 1);
-    unsigned crossoverPoint = RandomNumber();
-    for (unsigned j = crossoverPoint; j < children1.GetNumberOfBits(); j++) {
-        children1.binaryEncoding[j] = population[indexParent2].binaryEncoding[j];
-        children2.binaryEncoding[j] = population[indexParent1].binaryEncoding[j];
-    }
-    children.push_back(children1);
-    children.push_back(children2);
-}
-void SIMPLE_GA::Mutation() {
-    My_Random_Int_f RandomNumber1_100(1, 100);
-    for (DESIGN_VARIABLES &ind : children) {
-        for (unsigned j = 0; j < ind.GetNumberOfBits(); j++) {
-            if (RandomNumber1_100() <= 100 * mutationRate)
-                ind.binaryEncoding[j] = (ind.binaryEncoding[j] == true ? false : true);
-        }
-    }
-}
-
-DESIGN_VARIABLES SIMPLE_GA::Optimization() {
-    unsigned generation = 1;
-    for (auto &ind : population)
-        Cost(ind);
-    std::vector<unsigned> indexParent(2);
-    while (generation <= maxGenerationNumber) {
-        for (unsigned j = 0; j < sizePopulation / 2; j++) {
-            indexParent = Selection();
-            Crossover(indexParent[0], indexParent[1]);
-        }
-        Mutation();
-        for (auto &ind : children) {
-            Cost(ind);
-            if (ind.cost < bestIndivid.cost)
-                bestIndivid = ind;
-        }
-        population = children;
-        children.clear();
-        generation++;
-    }
-    return bestIndivid;
-}
+//SIMPLE_GA::SIMPLE_GA(unsigned sizePopulation, unsigned maxGenerationNumber, float minAcceptableCost, float maxAcceptableCost, float mutationRate): sizePopulation{sizePopulation}, maxGenerationNumber{maxGenerationNumber}, mutationRate{mutationRate}, population(sizePopulation), calculatedSkins{}, Cost{calculatedSkins, minAcceptableCost, maxAcceptableCost} {
+//    bestIndivid.SetCost(std::numeric_limits<float>::infinity());
+//    Optimization();
+//    std::cout << "\n\n Best individual: \n" << bestIndivid << "It has cost is " << bestIndivid.cost << '\n';
+//    bestIndivid.WriteAnglesInFileWithPath();
+//    std::cout << "Best individ cost is " << bestIndivid.ReadSafetyFactorFromFileWithPath() << '\n';
+//}
+//
+//std::vector<unsigned> SIMPLE_GA::Selection() const {
+//    unsigned indexParent1;
+//    unsigned indexParent2;
+//    float totalCost = 0;
+//    for (auto &ind : population)
+//        totalCost += ind.cost;
+//    std::vector<float> indCost(sizePopulation);
+//    for (int j = 0; j < sizePopulation; j++)
+//        indCost[j] = population[j].cost / totalCost * 100;
+//    
+//        //    for (int j = 0; j < sizePopulation; j++)
+//        //        std::cout << indCost[j] << '\n';
+//    
+//    My_Random_Int_f RandomNumber1_100(1, 100);
+//    unsigned r = RandomNumber1_100();
+//    unsigned wheel = 0;
+//    unsigned indexIndivid = 0;
+//    while (indexIndivid < sizePopulation && wheel < r) {
+//        wheel += indCost[indexIndivid];
+//        indexIndivid++;
+//    }
+//    indexParent1 = --indexIndivid;
+//    r = RandomNumber1_100();
+//    wheel = 0;
+//    indexIndivid = 0;
+//    while (indexIndivid < sizePopulation && wheel < r) {
+//        wheel += indCost[indexIndivid];
+//        indexIndivid++;
+//    }
+//    indexParent2 = --indexIndivid;
+//    return std::vector<unsigned>{indexParent1, indexParent2};
+//}
+//void SIMPLE_GA::Crossover(unsigned indexParent1, unsigned indexParent2) {
+//    DESIGN_VARIABLES children1{population[indexParent1]};
+//    DESIGN_VARIABLES children2{population[indexParent2]};
+//    My_Random_Int_f RandomNumber(1, children1.GetNumberOfBits() - 1);
+//    unsigned crossoverPoint = RandomNumber();
+//    for (unsigned j = crossoverPoint; j < children1.GetNumberOfBits(); j++) {
+//        children1.binaryEncoding[j] = population[indexParent2].binaryEncoding[j];
+//        children2.binaryEncoding[j] = population[indexParent1].binaryEncoding[j];
+//    }
+//    children.push_back(children1);
+//    children.push_back(children2);
+//}
+//void SIMPLE_GA::Mutation() {
+//    My_Random_Int_f RandomNumber1_100(1, 100);
+//    for (DESIGN_VARIABLES &ind : children) {
+//        for (unsigned j = 0; j < ind.GetNumberOfBits(); j++) {
+//            if (RandomNumber1_100() <= 100 * mutationRate)
+//                ind.binaryEncoding[j] = (ind.binaryEncoding[j] == true ? false : true);
+//        }
+//    }
+//}
+//
+//DESIGN_VARIABLES SIMPLE_GA::Optimization() {
+//    unsigned generation = 1;
+//    for (auto &ind : population)
+//        Cost(ind);
+//    std::vector<unsigned> indexParent(2);
+//    while (generation <= maxGenerationNumber) {
+//        for (unsigned j = 0; j < sizePopulation / 2; j++) {
+//            indexParent = Selection();
+//            Crossover(indexParent[0], indexParent[1]);
+//        }
+//        Mutation();
+//        for (auto &ind : children) {
+//            Cost(ind);
+//            if (ind.cost < bestIndivid.cost)
+//                bestIndivid = ind;
+//        }
+//        population = children;
+//        children.clear();
+//        generation++;
+//    }
+//    return bestIndivid;
+//}

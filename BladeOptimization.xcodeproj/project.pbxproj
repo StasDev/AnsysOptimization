@@ -63,7 +63,7 @@
 			isa = PBXGroup;
 			children = (
 				1F77078D27832DA100805FE2 /* Include */,
-				1F77078E2783364D00805FE2 /* Files */,
+				54C69AEF278DCD55005228F0 /* Files */,
 				1F77078C278320D700805FE2 /* Optimization */,
 				1F77078027831F6300805FE2 /* main.cpp */,
 			);
@@ -88,7 +88,7 @@
 			path = Include;
 			sourceTree = "<group>";
 		};
-		1F77078E2783364D00805FE2 /* Files */ = {
+		54C69AEF278DCD55005228F0 /* Files */ = {
 			isa = PBXGroup;
 			children = (
 			);
