@@ -77,11 +77,12 @@ constexpr float R_TWIST = 1;
 constexpr float BETA_TWIST = 2;
 
 //Optimization
-constexpr unsigned SIZE_POPULATION = 20;
+constexpr unsigned POPULATION_SIZE = 20; // even number
 constexpr unsigned MAX_GENERATION_NUMBER = 80;
-constexpr float PENALTY_R1 = 3;
-constexpr float PENALTY_R2 = 2;
-constexpr float PENALTY_BETA = 2;
 constexpr float MUTATION_RATE = 0.02;
+//constexpr float PENALTY_R1 = 3;
+//constexpr float PENALTY_R2 = 2;
+//constexpr float PENALTY_BETA = 2;
+
 
 #endif /* Parameters_hpp */

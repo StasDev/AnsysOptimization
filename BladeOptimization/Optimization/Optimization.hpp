@@ -90,7 +90,7 @@ public:
     int GetSparWallPosition() const;
     
     void SetCost(float c);
-    float GetCost();
+    float GetCost() const;
     
     void WriteInFileWithPath(const std::string &path = "/Users/mymac/Documents/Cpp/BladeOptimizationCpp/BladeOptimization/BladeOptimization/Files", const std::string &nameWithExtension =  "Database.txt") const;
 //    float ReadSafetyFactorFromFileWithPath(const std::string &path = "/Users/mymac/Documents/Cpp/BladeOptimizationCpp/BladeOptimization/BladeOptimization/Files", const std::string &nameWithExtension =  "Database.txt");
@@ -98,7 +98,7 @@ public:
     
     
     friend class Cost_f;
-//    friend class SIMPLE_GA;
+    friend class SIMPLE_GA;
 };
 
 class Cost_f {
@@ -141,27 +141,26 @@ class Cost_f {
     float CostStress(const DESIGN_VARIABLES &blade);
     float CostPenalty(const DESIGN_VARIABLES &blade);
 public:
-    Cost_f(DESIGN_VARIABLES &baselineBlade);
+    Cost_f(const DESIGN_VARIABLES &baselineBlade);
     float operator()(DESIGN_VARIABLES &blade);
 };
 
 class SIMPLE_GA {
-    unsigned sizePopulation;
+    unsigned populationSize;
     unsigned maxGenerationNumber;
     float mutationRate;
-    std::vector<DESIGN_VARIABLES> population;
+    std::vector<DESIGN_VARIABLES> parents;
     std::vector<DESIGN_VARIABLES> children;
-    
-    Cost_f Cost; // has information about already calculated costs
     DESIGN_VARIABLES bestIndivid;
     
-    std::vector<unsigned> Selection() const; // select individs from population for cossover, return indexes of two parents
-    void Crossover(unsigned indexParent1, unsigned indexParent2);
+    Cost_f Cost;
+    std::vector<unsigned> Selection() const; // method select two individuals from parents population for crossover and returns it indices
+    void Crossover(const std::vector<unsigned> &indicesParents);
     void Mutation();
     
 //    const DESIGN_VARIABLES &BestIndividInPopulation() const;
 public:
-    SIMPLE_GA(unsigned sizePopulation = SIZE_POPULATION, unsigned maxGenerationNumber = MAX_GENERATION_NUMBER, float minAcceptableCost = MIN_ACCEPTABLE_COST, float maxAcceptableCost = MAX_ACCEPTABLE_COST, float mutationRate = MUTATION_RATE);
+    SIMPLE_GA(const DESIGN_VARIABLES baselineBlade, unsigned populationSize = POPULATION_SIZE, unsigned maxGenerationNumber = MAX_GENERATION_NUMBER, float mutationRate = MUTATION_RATE);
     DESIGN_VARIABLES Optimization();
 };
 

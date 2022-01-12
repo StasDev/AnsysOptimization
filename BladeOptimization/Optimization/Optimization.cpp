@@ -60,11 +60,11 @@ void DESIGN_VARIABLES::FillAllDirectAdressingTables(bool hasSpar) {
 
 DESIGN_VARIABLES::DESIGN_VARIABLES(unsigned skinNumberOfLayers, unsigned sparNumberOfLayers): doesBladeHasSpar(sparNumberOfLayers), skinNumberOfLayers{skinNumberOfLayers}, sparNumberOfLayers{sparNumberOfLayers}, sizeInBits{skinBitsPerLayer * skinNumberOfLayers + tmBitsPerRadius + tmBitsPerLength + tmBitsPerPositionXY}, binaryEncoding(sizeInBits) {
     My_Random_Int_f RandNumber01(0, 1);
+    FillAllDirectAdressingTables(doesBladeHasSpar);
     if (doesBladeHasSpar)
         sizeInBits += sparNumberOfLayers * sparBitsPerLayer + sparBitsPerWallAngle + sparBitsPerWallPosition;
     for (int j = 0; j < sizeInBits; j++)
         binaryEncoding[j] = RandNumber01();
-    FillAllDirectAdressingTables(doesBladeHasSpar);
 }
 DESIGN_VARIABLES::DESIGN_VARIABLES(const DESIGN_VARIABLES &x): doesBladeHasSpar{x.doesBladeHasSpar}, skinNumberOfLayers{x.skinNumberOfLayers}, sparNumberOfLayers{x.sparNumberOfLayers}, sizeInBits{x.sizeInBits}, binaryEncoding(x.binaryEncoding), cost{x.cost} {}
 DESIGN_VARIABLES &DESIGN_VARIABLES::operator=(const DESIGN_VARIABLES &x) {
@@ -217,7 +217,7 @@ int DESIGN_VARIABLES::GetSparWallPosition() const{
 void DESIGN_VARIABLES::SetCost(float c) {
     cost = c;
 }
-float DESIGN_VARIABLES::GetCost() {
+float DESIGN_VARIABLES::GetCost() const {
     return cost;
 }
 
@@ -334,7 +334,7 @@ float Cost_f::CostPenalty(const DESIGN_VARIABLES &blade) {
     return weightStrength * g_strength + weightUZ * g_uZ + weightUTwist * g_uTwist; // + weightUR * g_uR 
 }
 
-Cost_f::Cost_f(DESIGN_VARIABLES &baselineBlade) {
+Cost_f::Cost_f(const DESIGN_VARIABLES &baselineBlade) {
     massBaselineBlade; // <= ANSYS
     maxEqStressInBaselineBlade; // <= ANSYS
 }
@@ -380,87 +380,88 @@ float Cost_f::operator()(DESIGN_VARIABLES &blade) {
     return cost;
 }
 
-//SIMPLE_GA::SIMPLE_GA(unsigned sizePopulation, unsigned maxGenerationNumber, float minAcceptableCost, float maxAcceptableCost, float mutationRate): sizePopulation{sizePopulation}, maxGenerationNumber{maxGenerationNumber}, mutationRate{mutationRate}, population(sizePopulation), calculatedSkins{}, Cost{calculatedSkins, minAcceptableCost, maxAcceptableCost} {
-//    bestIndivid.SetCost(std::numeric_limits<float>::infinity());
-//    Optimization();
-//    std::cout << "\n\n Best individual: \n" << bestIndivid << "It has cost is " << bestIndivid.cost << '\n';
-//    bestIndivid.WriteAnglesInFileWithPath();
-//    std::cout << "Best individ cost is " << bestIndivid.ReadSafetyFactorFromFileWithPath() << '\n';
-//}
-//
-//std::vector<unsigned> SIMPLE_GA::Selection() const {
-//    unsigned indexParent1;
-//    unsigned indexParent2;
-//    float totalCost = 0;
-//    for (auto &ind : population)
-//        totalCost += ind.cost;
-//    std::vector<float> indCost(sizePopulation);
-//    for (int j = 0; j < sizePopulation; j++)
-//        indCost[j] = population[j].cost / totalCost * 100;
-//    
-//        //    for (int j = 0; j < sizePopulation; j++)
-//        //        std::cout << indCost[j] << '\n';
-//    
-//    My_Random_Int_f RandomNumber1_100(1, 100);
-//    unsigned r = RandomNumber1_100();
-//    unsigned wheel = 0;
-//    unsigned indexIndivid = 0;
-//    while (indexIndivid < sizePopulation && wheel < r) {
-//        wheel += indCost[indexIndivid];
-//        indexIndivid++;
-//    }
-//    indexParent1 = --indexIndivid;
-//    r = RandomNumber1_100();
-//    wheel = 0;
-//    indexIndivid = 0;
-//    while (indexIndivid < sizePopulation && wheel < r) {
-//        wheel += indCost[indexIndivid];
-//        indexIndivid++;
-//    }
-//    indexParent2 = --indexIndivid;
-//    return std::vector<unsigned>{indexParent1, indexParent2};
-//}
-//void SIMPLE_GA::Crossover(unsigned indexParent1, unsigned indexParent2) {
-//    DESIGN_VARIABLES children1{population[indexParent1]};
-//    DESIGN_VARIABLES children2{population[indexParent2]};
-//    My_Random_Int_f RandomNumber(1, children1.GetNumberOfBits() - 1);
-//    unsigned crossoverPoint = RandomNumber();
-//    for (unsigned j = crossoverPoint; j < children1.GetNumberOfBits(); j++) {
-//        children1.binaryEncoding[j] = population[indexParent2].binaryEncoding[j];
-//        children2.binaryEncoding[j] = population[indexParent1].binaryEncoding[j];
-//    }
-//    children.push_back(children1);
-//    children.push_back(children2);
-//}
-//void SIMPLE_GA::Mutation() {
-//    My_Random_Int_f RandomNumber1_100(1, 100);
-//    for (DESIGN_VARIABLES &ind : children) {
-//        for (unsigned j = 0; j < ind.GetNumberOfBits(); j++) {
-//            if (RandomNumber1_100() <= 100 * mutationRate)
-//                ind.binaryEncoding[j] = (ind.binaryEncoding[j] == true ? false : true);
-//        }
-//    }
-//}
-//
-//DESIGN_VARIABLES SIMPLE_GA::Optimization() {
-//    unsigned generation = 1;
-//    for (auto &ind : population)
-//        Cost(ind);
-//    std::vector<unsigned> indexParent(2);
-//    while (generation <= maxGenerationNumber) {
-//        for (unsigned j = 0; j < sizePopulation / 2; j++) {
-//            indexParent = Selection();
-//            Crossover(indexParent[0], indexParent[1]);
-//        }
-//        Mutation();
-//        for (auto &ind : children) {
-//            Cost(ind);
-//            if (ind.cost < bestIndivid.cost)
-//                bestIndivid = ind;
-//        }
-//        population = children;
-//        children.clear();
-//        generation++;
-//    }
-//    return bestIndivid;
-//}
+SIMPLE_GA::SIMPLE_GA(const DESIGN_VARIABLES baselineBlade, unsigned populationSize, unsigned maxGenerationNumber, float mutationRate): populationSize{populationSize}, maxGenerationNumber{maxGenerationNumber}, mutationRate{mutationRate}, parents(populationSize), children{}, Cost{baselineBlade} {
+    bestIndivid.SetCost(std::numeric_limits<float>::infinity());
+    Optimization();
+    std::cout << "\n\n Best individual has the next parametrization: \n" << bestIndivid << "\n It has cost is " << bestIndivid.GetCost() << '\n';
+}
+
+std::vector<unsigned> SIMPLE_GA::Selection() const {
+    float totalParentsCost = 0;
+    float maxParentCost = -std::numeric_limits<float>::infinity();
+    for (auto &ind : parents) {
+        totalParentsCost += ind.GetCost();
+        if (maxParentCost < ind.GetCost())
+            maxParentCost = ind.GetCost();
+    }
+    float t = 1.1;
+    float fMax = t * maxParentCost;
+    float d = populationSize * fMax - totalParentsCost;
+    std::vector<float> pSelection(populationSize);
+    for (int i = 0; i < populationSize; i++)
+        pSelection[i] = (fMax - parents[i].GetCost()) / d;
+    std::vector<unsigned> indicesParents(2);
+    My_Random_Int_f RandomNumber1_100(1, 100);
+    unsigned sector; // equiv individ index
+    float r;
+    float wheelSectorMax;
+    for (int i = 0; i < 2; i++) {
+        sector = 0;
+        r = RandomNumber1_100() / 100.f;
+        wheelSectorMax = pSelection[0];
+        while (sector != populationSize && r > wheelSectorMax) {
+            wheelSectorMax += pSelection[++sector];
+        }
+        indicesParents[i] = sector;
+    }
+    return indicesParents;
+}
+void SIMPLE_GA::Crossover(const std::vector<unsigned> &indicesParents) {
+    std::vector<DESIGN_VARIABLES> ch = {parents[indicesParents[0]], parents[indicesParents[1]]};
+    My_Random_Int_f RandomNumber(0, ch[0].GetSizeInBits());
+    std::vector<int> crossoverPoints = {RandomNumber(), RandomNumber()};
+    if (crossoverPoints[0] > crossoverPoints[1])
+        std::swap(crossoverPoints[0], crossoverPoints[1]);
+    for (int i = crossoverPoints[0]; i <= crossoverPoints[1]; i++) {
+        ch[0].binaryEncoding[i] = parents[indicesParents[1]].binaryEncoding[i];
+        ch[1].binaryEncoding[i] = parents[indicesParents[0]].binaryEncoding[i];
+    }
+    children.push_back(ch[0]);
+    children.push_back(ch[1]);
+}
+void SIMPLE_GA::Mutation() {
+    My_Random_Int_f RandomNumber1_100(1, 100);
+    for (DESIGN_VARIABLES &ind : children) {
+        for (unsigned j = 0; j < ind.GetSizeInBits(); j++) {
+            if (RandomNumber1_100() <= 100 * mutationRate)
+                ind.binaryEncoding[j] = (ind.binaryEncoding[j] == true ? false : true);
+        }
+    }
+}
+
+DESIGN_VARIABLES SIMPLE_GA::Optimization() {
+    unsigned generationNumber = 1;
+    for (auto &ind : parents) {
+        Cost(ind); // calculate costs all parents and save it in Cost_f list<DESIGN_VARIABLES>
+        if (ind.cost < bestIndivid.cost)
+            bestIndivid = ind;
+    }
+    std::vector<unsigned> indicesParent(2);
+    while (generationNumber <= maxGenerationNumber) {
+//        Create children population
+        for (unsigned j = 0; j < populationSize / 2; j++)
+            Crossover(Selection());
+        Mutation();
+//        Esitmate they costs
+        for (auto &ind : children) {
+            Cost(ind);
+            if (ind.cost < bestIndivid.cost)
+                bestIndivid = ind;
+        }
+//        Next generation
+        parents = children;
+        children.clear();
+        generationNumber++;
+    }
+    return bestIndivid;
+}
