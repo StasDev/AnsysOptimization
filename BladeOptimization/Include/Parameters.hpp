@@ -20,7 +20,7 @@ constexpr float PRETWIST_ANGLE = -7; // deg
 constexpr float SAFETY_FACTOR_MIN = 1.5;
 constexpr float SAFETY_FACTOR_MAX = 2;
 
-constexpr unsigned NUMBER_SKIN_LAYERS = 2;
+constexpr unsigned NUMBER_SKIN_LAYERS = 4;
 constexpr unsigned BITS_PER_SKIN_LAYER = 6;
 constexpr int SKIN_MIN_ANGLE = -89; // deg
 constexpr int SKIN_MAX_ANGLE = 90;  // deg
@@ -34,7 +34,7 @@ constexpr int TM_MIN_L = 360; // mm
 constexpr int TM_MAX_L = 570; // mm
 constexpr unsigned BITS_PER_TM_XY = 3;
 
-constexpr unsigned NUMBER_SPAR_LAYERS = 2;
+constexpr unsigned NUMBER_SPAR_LAYERS = 0;
 constexpr unsigned BITS_PER_SPAR_LAYER = 6;
 constexpr int SPAR_MIN_ANGLE = -89; // deg
 constexpr int SPAR_MAX_ANGLE = 90;  // deg
@@ -78,7 +78,7 @@ constexpr float BETA_TWIST = 2;
 
 //Optimization
 constexpr unsigned POPULATION_SIZE = 20; // even number
-constexpr unsigned MAX_GENERATION_NUMBER = 80;
+constexpr unsigned MAX_GENERATION_NUMBER = 100;
 constexpr float MUTATION_RATE = 0.02;
 //constexpr float PENALTY_R1 = 3;
 //constexpr float PENALTY_R2 = 2;

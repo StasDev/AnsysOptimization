@@ -8,14 +8,21 @@
 #include "Optimization.hpp"
 
 int main(int argc, const char * argv[]) {
-//    Create object "test" which constructor does optimization
-//    SIMPLE_GA test(SIZE_POPULATION,MAX_GENERATION_NUMBER, MIN_ACCEPTABLE_COST,MAX_ACCEPTABLE_COST, MUTATION_RATE);
-    DESIGN_VARIABLES dv;
-    std::cout << dv.GetSizeInBits() << '\n';
-    std::cout << dv.GetCost() << '\n';
-    std::cout << -std::numeric_limits<float>::infinity() << '\n';
-//    std::vector<bool> b = {true};
-//    std::cout << sizeof(b) << '\n';
-//    std::cout << sizeof(dv) << '\n';
+//    DESIGN_VARIABLES dV;
+//    std::cout << dV;
+//    Cost_f CostF;
+//    std::cout << CostF(dV) << '\n';
+    
+//    std::cout << dV.GetTMRadius() << '\n';
+//    std::cout << dV.GetTMRadius() << '\n';
+//    for (int j = 0; j < pow(2, BITS_PER_SKIN_LAYER); j++)
+//        std::cout << DESIGN_VARIABLES::arrSkinSparAngles[j] << '\n';
+//    dV.SetApproxSkinAngle(1, 71);
+//    std::cout << "\n\n" << dV;
+    
+//    std::cout << TestCF_SumSquares(dV) << '\n';
+//    Create object "test" in constructor of which does optimization
+    SIMPLE_GA test;
+//    SIMPLE_GA test1;
     return 0;
 }

@@ -21,6 +21,7 @@ public:
 
 //Blade consist of skin, tuning mass (tm), foam, and optionally D-spar (spar)
 class DESIGN_VARIABLES {
+public: // for debugging
     bool doesBladeHasSpar;
 //    Skin
     unsigned skinNumberOfLayers;
@@ -62,12 +63,13 @@ class DESIGN_VARIABLES {
     static void FillDirectAdressingTable(std::vector<int> &arr, unsigned numberOfBits, int minValue, int maxValue);
     static void FillAllDirectAdressingTables(bool hasSpar);
     
-public:
+//public:
     DESIGN_VARIABLES(unsigned skinNumberOfLayers = NUMBER_SKIN_LAYERS, unsigned sparNumberOfLayers = NUMBER_SPAR_LAYERS);
     DESIGN_VARIABLES(const DESIGN_VARIABLES &arr);
     DESIGN_VARIABLES &operator=(const DESIGN_VARIABLES &arr);
     unsigned GetSizeInBits() const;
     
+    unsigned GetSkinNumberOfLayers() const;
     void SetApproxSkinAngle(unsigned layer, int angle);
     int GetSkinAngle(unsigned layer) const;
     
@@ -80,6 +82,7 @@ public:
     void SetTMPosition(unsigned keyPosition);
     unsigned GetTMPosition() const;
     
+    unsigned GetSparNumberOfLayers() const;
     void SetApproxSparAngle(unsigned layer, int angle);
     int GetSparAngle(unsigned layer) const;
     
@@ -93,9 +96,8 @@ public:
     float GetCost() const;
     
     void WriteInFileWithPath(const std::string &path = "/Users/mymac/Documents/Cpp/BladeOptimizationCpp/BladeOptimization/BladeOptimization/Files", const std::string &nameWithExtension =  "Database.txt") const;
-//    float ReadSafetyFactorFromFileWithPath(const std::string &path = "/Users/mymac/Documents/Cpp/BladeOptimizationCpp/BladeOptimization/BladeOptimization/Files", const std::string &nameWithExtension =  "Database.txt");
-    friend std::ostream &operator<<(std::ostream &os, const DESIGN_VARIABLES &x);
     
+    friend std::ostream &operator<<(std::ostream &os, const DESIGN_VARIABLES &x);
     
     friend class Cost_f;
     friend class SIMPLE_GA;
@@ -141,9 +143,12 @@ class Cost_f {
     float CostStress(const DESIGN_VARIABLES &blade);
     float CostPenalty(const DESIGN_VARIABLES &blade);
 public:
-    Cost_f(const DESIGN_VARIABLES &baselineBlade);
+    Cost_f(const DESIGN_VARIABLES baselineBlade = {});
     float operator()(DESIGN_VARIABLES &blade);
 };
+
+float TestCF_SumSquares(const DESIGN_VARIABLES &blade);
+float TestCF_Ackley(const DESIGN_VARIABLES &blade);
 
 class SIMPLE_GA {
     unsigned populationSize;
@@ -160,7 +165,10 @@ class SIMPLE_GA {
     
 //    const DESIGN_VARIABLES &BestIndividInPopulation() const;
 public:
-    SIMPLE_GA(const DESIGN_VARIABLES baselineBlade, unsigned populationSize = POPULATION_SIZE, unsigned maxGenerationNumber = MAX_GENERATION_NUMBER, float mutationRate = MUTATION_RATE);
+    SIMPLE_GA(int b) {
+        std::cout << "oh\n";
+    }
+    SIMPLE_GA(unsigned populationSize = POPULATION_SIZE, unsigned maxGenerationNumber = MAX_GENERATION_NUMBER, float mutationRate = MUTATION_RATE, const DESIGN_VARIABLES baselineBlade = {});
     DESIGN_VARIABLES Optimization();
 };
 
