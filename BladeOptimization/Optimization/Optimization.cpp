@@ -78,9 +78,6 @@ DESIGN_VARIABLES &DESIGN_VARIABLES::operator=(const DESIGN_VARIABLES &x) {
     return *this;
 }
 
-unsigned DESIGN_VARIABLES::GetSizeInBits() const {
-    return sizeInBits;
-}
 unsigned DESIGN_VARIABLES::GetSkinNumberOfLayers() const {
     return skinNumberOfLayers;
 }
@@ -198,6 +195,7 @@ int DESIGN_VARIABLES::GetSparWallAngle() const{
         keyWA += binaryEncoding[j] * pow(2, j - indexFirstBit);
     return arrSparWallAngles[keyWA];
 }
+
 void DESIGN_VARIABLES::SetSparWallPosition(int xD) {
     assert(doesBladeHasSpar);
     float stepWP = (sparMaxWallPosition - sparMinWallPosition) / (pow(2,sparBitsPerWallPosition) - 1);
@@ -212,12 +210,19 @@ void DESIGN_VARIABLES::SetSparWallPosition(int xD) {
 int DESIGN_VARIABLES::GetSparWallPosition() const{
     assert(doesBladeHasSpar);
     unsigned indexFirstBit = skinNumberOfLayers * skinBitsPerLayer + tmBitsPerRadius + tmBitsPerLength + tmBitsPerPositionXY + sparNumberOfLayers * sparBitsPerLayer + sparBitsPerWallAngle;
+//    std::cout << "\n Index first bit is " << indexFirstBit << '\n';
     unsigned keyWP = 0;
     for (unsigned j = indexFirstBit; j < indexFirstBit + sparBitsPerWallPosition; j++)
         keyWP += binaryEncoding[j] * pow(2, j - indexFirstBit);
-    return arrSparWallAngles[keyWP];
+//    for (int i = indexFirstBit; i < indexFirstBit + sparBitsPerWallPosition; i++)
+//        std::cout << binaryEncoding[i] << ' ';
+//    std::cout << "\n KeyWp is " << keyWP << '\n';
+    return arrSparWallPositions[keyWP];
 }
 
+unsigned DESIGN_VARIABLES::GetSizeInBits() const {
+    return sizeInBits;
+}
 void DESIGN_VARIABLES::SetCost(float c) {
     cost = c;
 }
@@ -231,20 +236,23 @@ void DESIGN_VARIABLES::WriteInFileWithPath(const std::string &path, const std::s
 
 std::ostream &operator<<(std::ostream &os, const DESIGN_VARIABLES &x) {
     os << "Numbers of bits are " << x.sizeInBits << '\n';
-    os << "Binary encoding:\n";
+    os << "Binary encoding: ";
     for (int i = 0; i < x.sizeInBits; i++) {
         os << x.binaryEncoding[i];
     }
-    std::cout << "\n";
-    for (int layer = 1; layer <= x.skinNumberOfLayers; layer++ ) {
+    os << "\nSkin number of layers: " << x.GetSkinNumberOfLayers() << "\n";
+    for (int layer = 1; layer <= x.GetSkinNumberOfLayers(); layer++ )
         os << "Skin layer " << layer << " has angle " << x.GetSkinAngle(layer) << '\n';
-        
-//        Other variables ...
-    }
-//    std::cout << "\n";
-//    for (int layer = 1; layer <= x.sparNumberOfLayers; layer++ ) {
-//        os << "Spar layer " << layer << " has angle " << x.GetSparAngle(layer) << '\n';
-//    }
+    os << "Tuning mass radius: " << x.GetTMRadius() << "\n";
+    os << "Tuning mass length: " << x.GetTMLength() << "\n";
+    os << "Tuning mass position: " << x.GetTMPosition() << "\n";
+
+    os << "Spar number of layers: " << x.GetSparNumberOfLayers() << "\n";
+    for (int layer = 1; layer <= x.GetSparNumberOfLayers() ; layer++)
+        os << "Spar layer " << layer << " has angle " << x.GetSparAngle(layer) << '\n';
+    os << "Spar wall angle: " << x.GetSparWallAngle() << "\n";
+    os << "Spar wall position: " << x.GetSparWallPosition() << "\n";
+    std::cout << '\n';
     return os;
 }
 
@@ -293,7 +301,6 @@ float Cost_f::CheckCost(const DESIGN_VARIABLES &blade) const {
     }
     return -1;
 }
-
 float Cost_f::CostMass(const DESIGN_VARIABLES &blade) {
     float massBlade; // <= ANSYS
     return massBlade / massBaselineBlade;
@@ -355,9 +362,10 @@ Cost_f::Cost_f(const DESIGN_VARIABLES baselineBlade) {
 //Simple cost functions for debugging
 float TestCF_SumSquares(const DESIGN_VARIABLES &blade){
     float cost = 0;
-    for (int j = 1; j <= blade.GetSkinNumberOfLayers(); j++) {
-        cost += pow(blade.GetSkinAngle(j), 2);
-    }
+    for (int i = 1; i <= blade.GetSkinNumberOfLayers(); i++)
+        cost += pow(blade.GetSkinAngle(i), 2);
+    for (int j = 1; j <= blade.GetSparNumberOfLayers(); j++)
+        cost += pow(blade.GetSparAngle(j), 2);
     return cost;
 }
 float TestCF_Ackley(const DESIGN_VARIABLES &blade){
@@ -365,12 +373,16 @@ float TestCF_Ackley(const DESIGN_VARIABLES &blade){
     float a = 20;
     float b = 0.2;
     float c = 2 * M_PI;
-    float d = blade.GetSkinNumberOfLayers();
+    float d = blade.GetSkinNumberOfLayers() + blade.GetSparNumberOfLayers();
     float sumX = 0;
     float sumCosX = 0;
-    for (int j = 1; j <= d; j++) {
-        sumX += pow(blade.GetSkinAngle(j), 2);
-        sumCosX += cos(c * blade.GetSkinAngle(j));
+    for (int i = 1; i <= blade.GetSkinNumberOfLayers(); i++) {
+        sumX += pow(blade.GetSkinAngle(i), 2);
+        sumCosX += cos(c * blade.GetSkinAngle(i));
+    }
+    for (int j = 1; j <= blade.GetSparNumberOfLayers(); j++) {
+        sumX += pow(blade.GetSparAngle(j), 2);
+        sumCosX += cos(c * blade.GetSparAngle(j));
     }
     cost = -a * exp(-b * sqrt(sumX/d)) - exp(sumCosX/d) + a + exp(1);
     return cost;
@@ -382,11 +394,12 @@ float Cost_f::operator()(DESIGN_VARIABLES &blade) {
     if (cost > 0)
         return cost;
 //    *****************************
+//    Commetn out for real task
 //    Test on simple cost functions:
     cost = TestCF_SumSquares(blade);
-//    cost = TestCF_Ackley(skin.numberSkinLayers, skin);
+//    cost = TestCF_Ackley(blade);
 //    *****************************
-    /*
+    /* Uncomment for real task
     blade.WriteInFileWithPath();
     cost = weightMass * CostMass(blade) + weightNatrualFrequencies * CostNaturalFrequencies(blade) + weightStrength * CostStress(blade) + CostPenalty(blade);
     */
@@ -397,7 +410,8 @@ float Cost_f::operator()(DESIGN_VARIABLES &blade) {
 
 SIMPLE_GA::SIMPLE_GA(unsigned populationSize, unsigned maxGenerationNumber, float mutationRate, const DESIGN_VARIABLES baselineBlade): populationSize{populationSize}, maxGenerationNumber{maxGenerationNumber}, mutationRate{mutationRate}, parents(populationSize), children{}, Cost{baselineBlade} {
     bestIndivid.SetCost(std::numeric_limits<float>::infinity());
-    std::cout << bestIndivid;
+//    for (auto &ind : parents)
+//        std::cout << ind;
     Optimization();
     std::cout << "\n\n Best individual has the next parametrization: \n" << bestIndivid << "\n It has cost is " << bestIndivid.GetCost() << '\n';
 }
@@ -464,13 +478,12 @@ DESIGN_VARIABLES SIMPLE_GA::Optimization() {
     }
     std::vector<unsigned> indicesParent(2);
     while (generationNumber <= maxGenerationNumber) {
-        std::cout << "gen number " << generationNumber << '\n';
+//        std::cout << "gen number " << generationNumber << '\n';
 //        Create children population
         for (unsigned j = 0; j < populationSize / 2; j++)
             Crossover(Selection());
-//        std::cout << "hey\n";
         Mutation();
-//        Esitmate they costs
+//        Esitmate children costs
         for (auto &ind : children) {
             Cost(ind);
             if (ind.cost < bestIndivid.cost)

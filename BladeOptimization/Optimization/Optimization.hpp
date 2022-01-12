@@ -53,7 +53,7 @@ public: // for debugging
     
     float cost = std::numeric_limits<double>::infinity();
     
-//    For decoding of binary representation is used direct addressing scheme;
+//    Arrays needed for decoding of binary representation is used direct addressing scheme
     static std::vector<int> arrSkinSparAngles;
     static std::vector<int> arrTMRadius;
     static std::vector<int> arrTMLength;
@@ -67,7 +67,6 @@ public: // for debugging
     DESIGN_VARIABLES(unsigned skinNumberOfLayers = NUMBER_SKIN_LAYERS, unsigned sparNumberOfLayers = NUMBER_SPAR_LAYERS);
     DESIGN_VARIABLES(const DESIGN_VARIABLES &arr);
     DESIGN_VARIABLES &operator=(const DESIGN_VARIABLES &arr);
-    unsigned GetSizeInBits() const;
     
     unsigned GetSkinNumberOfLayers() const;
     void SetApproxSkinAngle(unsigned layer, int angle);
@@ -91,6 +90,8 @@ public: // for debugging
     
     void SetSparWallPosition(int xD);
     int GetSparWallPosition() const;
+    
+    unsigned GetSizeInBits() const;
     
     void SetCost(float c);
     float GetCost() const;
@@ -148,7 +149,7 @@ public:
 };
 
 float TestCF_SumSquares(const DESIGN_VARIABLES &blade);
-float TestCF_Ackley(const DESIGN_VARIABLES &blade);
+float TestCF_ley(const DESIGN_VARIABLES &blade);
 
 class SIMPLE_GA {
     unsigned populationSize;
@@ -165,9 +166,6 @@ class SIMPLE_GA {
     
 //    const DESIGN_VARIABLES &BestIndividInPopulation() const;
 public:
-    SIMPLE_GA(int b) {
-        std::cout << "oh\n";
-    }
     SIMPLE_GA(unsigned populationSize = POPULATION_SIZE, unsigned maxGenerationNumber = MAX_GENERATION_NUMBER, float mutationRate = MUTATION_RATE, const DESIGN_VARIABLES baselineBlade = {});
     DESIGN_VARIABLES Optimization();
 };
