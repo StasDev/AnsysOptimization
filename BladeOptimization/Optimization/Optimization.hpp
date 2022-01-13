@@ -29,9 +29,9 @@ public: // for debugging
     static int skinMinAngle;
     static int skinMaxAngle;
 //    Tuning mass
-    static unsigned tmBitsPerRadius;
-    static int tmMinRadius;
-    static int tmMaxRadius;
+    static unsigned tmBitsPerDiameter;
+    static int tmMinDiameter;
+    static int tmMaxDiameter;
     static unsigned tmBitsPerLength;
     static int tmMinLength;
     static int tmMaxLength;

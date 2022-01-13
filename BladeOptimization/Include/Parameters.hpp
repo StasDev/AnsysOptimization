@@ -26,9 +26,9 @@ constexpr int SKIN_MIN_ANGLE = -89; // deg
 constexpr int SKIN_MAX_ANGLE = 90;  // deg
 
 //Need redetermine values
-constexpr unsigned BITS_PER_TM_R = 2;
-constexpr int TM_MIN_R = 2; // mm
-constexpr int TM_MAX_R = 5; // mm
+constexpr unsigned BITS_PER_TM_D = 2;
+constexpr int TM_MIN_D = 2; // mm
+constexpr int TM_MAX_D = 5; // mm
 constexpr unsigned BITS_PER_TM_L = 2;
 constexpr int TM_MIN_L = 360; // mm
 constexpr int TM_MAX_L = 570; // mm
