@@ -107,6 +107,7 @@ public: // for debugging
 class Cost_f {
     static float weightMass;
     static float weightNatrualFrequencies;
+    static float weightAeroelasticStability;
     static float weightStrength;
     
     static float weightSigma;
@@ -136,11 +137,14 @@ class Cost_f {
     static std::list<DESIGN_VARIABLES> calculatedBlades;
     
     float massBaselineBlade;
+    float distanceMCACBaselineBlade;
+    float distanceSCACBaselineBlade;
     float maxEqStressInBaselineBlade;
     
     float CheckCost(const DESIGN_VARIABLES &skin) const; // Check whether skin.cost already calculated if yes then return cost otherwise return -1
     float CostMass(const DESIGN_VARIABLES &blade); // massBaselineBlade measured in grams
     float CostNaturalFrequencies(const DESIGN_VARIABLES &blade, unsigned quantityConsideredNatrualFrequencies = 10, unsigned quantityConsideredAirloadHarmonics = 10);
+    float CostAeroelasticStablity(const DESIGN_VARIABLES &blade);
     float CostStress(const DESIGN_VARIABLES &blade);
     float CostPenalty(const DESIGN_VARIABLES &blade);
 public:

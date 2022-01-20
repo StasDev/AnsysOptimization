@@ -48,9 +48,10 @@ constexpr int SPAR_WALL_MIN_POSITION = 0.2 * CHORD_LENGTH; // mm
 constexpr int SPAR_WALL_MAX_POSITION = 0.6 * CHORD_LENGTH; // mm
 
 //Cost functions parameters
-constexpr float WEIGHT_MASS = 1./3;
-constexpr float WEIGHT_NATURAL_FREQUENCIES = 1./3;
-constexpr float WEIGHT_STRENGTH = 1./3;
+constexpr float WEIGHT_MASS = 1./4;
+constexpr float WEIGHT_NATURAL_FREQUENCIES = 1./4;
+constexpr float WEIGHT_AEROELASTIC_STABILITY = 1./4;
+constexpr float WEIGHT_STRENGTH = 1./4;
 
 constexpr float WEIGHT_SIGMA = 1./4;
 constexpr float WEIGHT_UZ = 1./4;

@@ -259,6 +259,7 @@ std::ostream &operator<<(std::ostream &os, const DESIGN_VARIABLES &x) {
 //Weights for cost functions
 float Cost_f::weightMass = WEIGHT_MASS;
 float Cost_f::weightNatrualFrequencies = WEIGHT_NATURAL_FREQUENCIES;
+float Cost_f::weightAeroelasticStability = WEIGHT_AEROELASTIC_STABILITY;
 float Cost_f::weightStrength = WEIGHT_STRENGTH;
 //Weights for penalty (constraints) functions
 float Cost_f::weightSigma = WEIGHT_SIGMA;
@@ -330,9 +331,14 @@ float Cost_f::CostNaturalFrequencies(const DESIGN_VARIABLES &blade, unsigned qua
                 minDist = dist;
         }
     }
-    float cost = - minDist;
-    float penalty = rNF * pow(std::max(0.f, (OmegaMax - OmegaMin) / 2 + OmegaMax / 15 - minDist), betaNF);
+    float cost = - minDist / ((OmegaMax - OmegaMin) / 2);
+    float penalty = rNF * pow(std::max(0.f, cost + 1.1f), betaNF);
     return cost + penalty;
+}
+float Cost_f::CostAeroelasticStablity(const DESIGN_VARIABLES &blade) {
+    float distanceMCAC; // <= ANSYS
+    float distanceSCAC; // <= ANSYS
+    return 0.5 * distanceMCAC / distanceMCACBaselineBlade + 0.5 * distanceSCAC / distanceSCACBaselineBlade;
 }
 float Cost_f::CostStress(const DESIGN_VARIABLES &blade) {
     float maxSigmaEq; // <= ANSYS
@@ -341,21 +347,23 @@ float Cost_f::CostStress(const DESIGN_VARIABLES &blade) {
 float Cost_f::CostPenalty(const DESIGN_VARIABLES &blade) {
 //    Strength constraints - maximum equivalent stresses
     float safetyFactor; // <= ANSYS
-    float g_strength = rSF * pow(std::max(0.f, abs((safetyFactorMin + safetyFactorMax) / 2 - safetyFactor) - (safetyFactorMax + safetyFactorMin) / 2), betaSF);
+    float safetyFactorUtopia = (safetyFactorMin + safetyFactorMax) / 2;
+    float deltaSafetyFactor = (safetyFactorMax - safetyFactorMin) / 2;
+    float g_strength = rSF * pow(std::max(0.f, (abs(safetyFactor - safetyFactorUtopia) - deltaSafetyFactor) / deltaSafetyFactor), betaSF);
 //    Distortion of the blade shape = bias tip of the blade + twisting/detwisting
     float biasTipFlap; // <= ANSYS
-    float g_uZ = rBTF * pow(std::max(0.f, abs(biasTipFlap) - maxAcceptableBiasTipFlap), betaBTF);
-//    float biasTipRadius; // <= ANSYS
-//    float g_uR = ;//biasTipRadius;
+    float g_uZ = rBTF * pow(std::max(0.f, (abs(biasTipFlap) - maxAcceptableBiasTipFlap) / maxAcceptableBiasTipFlap), betaBTF);
     float twistTipSection; // <= ANSYS
-    float g_uTwist = rTwist * pow(std::max(0.f, twistTipSection - maxAcceptableTipSectionTwist), betaTwist);
+    float g_uTwist = rTwist * pow(std::max(0.f, abs(twistTipSection - maxAcceptableTipSectionTwist) / maxAcceptableTipSectionTwist), betaTwist);
     
-    assert(abs(weightStrength + weightUZ + weightUTwist - 1) < 1e-4); // + weightUR
-    return weightStrength * g_strength + weightUZ * g_uZ + weightUTwist * g_uTwist; // + weightUR * g_uR 
+//    assert(abs(weightStrength + weightUZ + weightUTwist - 1) < 1e-4); // + weightUR
+    return weightStrength * g_strength + weightUZ * g_uZ + weightUTwist * g_uTwist;
 }
 
 Cost_f::Cost_f(const DESIGN_VARIABLES baselineBlade) {
     massBaselineBlade; // <= ANSYS
+    distanceMCACBaselineBlade; // <= ANSYS
+    distanceSCACBaselineBlade; // <= ANSYS
     maxEqStressInBaselineBlade; // <= ANSYS
 }
 
@@ -401,7 +409,7 @@ float Cost_f::operator()(DESIGN_VARIABLES &blade) {
 //    *****************************
     /* Uncomment for real task
     blade.WriteInFileWithPath();
-    cost = weightMass * CostMass(blade) + weightNatrualFrequencies * CostNaturalFrequencies(blade) + weightStrength * CostStress(blade) + CostPenalty(blade);
+    cost = weightMass * CostMass(blade) + weightNatrualFrequencies * CostNaturalFrequencies(blade) + weightAeroelasticStability * CostAerolasticStability(blade) + weightStrength * CostStress(blade) + CostPenalty(blade);
     */
     blade.SetCost(cost);
     calculatedBlades.push_back(blade);
